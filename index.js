@@ -1,9 +1,15 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const XLSX = require("xlsx");
 
 const app = express();
+app.use(express.json());
+
+const users = new Map();
+const sessions = new Map();
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -16,6 +22,19 @@ const upload = multer({
     callback(null, true);
   },
 });
+
+function derivePasswordHash(password, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (error, derivedKey) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(derivedKey);
+    });
+  });
+}
 
 function formatName(value) {
   return value
@@ -691,6 +710,75 @@ function cleanRows(records, options) {
   return { rows: [originalHeaders, ...cleanedRows.filter(Boolean)], report };
 }
 
+app.post("/api/register", async (request, response) => {
+  const { email, password } = request.body ?? {};
+
+  if (typeof email !== "string" || typeof password !== "string") {
+    response.status(400).json({ error: "Informe um e-mail e uma senha." });
+    return;
+  }
+
+  const normalizedEmail = email.trim().toLocaleLowerCase("en-US");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalizedEmail)) {
+    response.status(400).json({ error: "E-mail inválido." });
+    return;
+  }
+
+  if (password.length < 8) {
+    response.status(400).json({ error: "A senha deve ter pelo menos 8 caracteres." });
+    return;
+  }
+
+  if (users.has(normalizedEmail)) {
+    response.status(409).json({ error: "Este e-mail já está cadastrado." });
+    return;
+  }
+
+  const salt = crypto.randomBytes(16).toString("hex");
+  const passwordHash = await derivePasswordHash(password, salt);
+  const user = {
+    id: crypto.randomUUID(),
+    email: normalizedEmail,
+    salt,
+    passwordHash,
+  };
+  users.set(normalizedEmail, user);
+
+  response.status(201).json({
+    user: { id: user.id, email: user.email },
+  });
+});
+
+app.post("/api/login", async (request, response) => {
+  const { email, password } = request.body ?? {};
+
+  if (typeof email !== "string" || typeof password !== "string") {
+    response.status(400).json({ error: "Informe um e-mail e uma senha." });
+    return;
+  }
+
+  const normalizedEmail = email.trim().toLocaleLowerCase("en-US");
+  const user = users.get(normalizedEmail);
+  if (!user) {
+    response.status(401).json({ error: "E-mail ou senha inválidos." });
+    return;
+  }
+
+  const passwordHash = await derivePasswordHash(password, user.salt);
+  const expectedHash = Buffer.from(user.passwordHash, "hex");
+  if (!crypto.timingSafeEqual(passwordHash, expectedHash)) {
+    response.status(401).json({ error: "E-mail ou senha inválidos." });
+    return;
+  }
+
+  const accessToken = crypto.randomBytes(32).toString("hex");
+  sessions.set(accessToken, user.id);
+  response.json({
+    accessToken,
+    user: { id: user.id, email: user.email },
+  });
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/upload", upload.single("arquivo"), (request, response, next) => {
@@ -756,7 +844,9 @@ app.use((error, request, response, next) => {
 
   const status = error instanceof multer.MulterError
     ? error.code === "LIMIT_FILE_SIZE" ? 413 : 400
-    : error.message.startsWith("Envie um arquivo") ? 400 : 422;
+    : error.status === 400 || error.status === 413
+      ? error.status
+      : error.message.startsWith("Envie um arquivo") ? 400 : 422;
 
   response.status(status).json({ error: error.message });
 });
