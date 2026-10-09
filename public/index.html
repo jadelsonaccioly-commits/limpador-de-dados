@@ -147,6 +147,42 @@
       :root[data-theme="dark"] .icon-sun { display: none; }
       :root[data-theme="dark"] .icon-moon { display: block; }
 
+      .auth-open-button {
+        min-height: 38px;
+        padding: 0 12px;
+        border: 1px solid #d8d4ff;
+        border-radius: 11px;
+        color: #5d55cf;
+        background: #f7f6ff;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .auth-open-button:hover { background: #efedff; }
+
+      .auth-user {
+        max-width: 180px;
+        overflow: hidden;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .auth-logout-button {
+        min-height: 38px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        color: var(--text-secondary);
+        background: var(--surface-muted);
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 650;
+      }
+
       main {
         display: flex;
         flex-direction: column;
@@ -630,6 +666,145 @@
       .status[data-state="error"] { color: #c04450; }
       .status[data-state="success"] { color: #21805d; }
 
+      .auth-dialog {
+        width: min(100% - 32px, 420px);
+        padding: 0;
+        overflow: visible;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        color: var(--text-primary);
+        background: var(--surface-solid);
+        box-shadow: var(--shadow-card);
+      }
+
+      .auth-dialog::backdrop {
+        background: rgba(13, 18, 32, .58);
+        backdrop-filter: blur(4px);
+      }
+
+      .auth-content { padding: 25px; }
+
+      .auth-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .auth-title {
+        margin: 0;
+        font-size: 21px;
+        letter-spacing: -.035em;
+      }
+
+      .auth-description {
+        margin: 7px 0 18px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .auth-close {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        color: var(--text-secondary);
+        background: var(--surface-muted);
+        cursor: pointer;
+        font-size: 19px;
+      }
+
+      .auth-form { display: grid; gap: 13px; }
+
+      .auth-field {
+        display: grid;
+        gap: 6px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .auth-field[hidden] { display: none; }
+
+      .auth-field input {
+        width: 100%;
+        min-height: 43px;
+        padding: 0 76px 0 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline-color: #7869ee;
+        color: var(--text-primary);
+        background: var(--surface-muted);
+        font-size: 13px;
+      }
+
+      .auth-password-control {
+        position: relative;
+        display: block;
+      }
+
+      .auth-password-toggle {
+        position: absolute;
+        top: 50%;
+        right: 9px;
+        padding: 5px 3px;
+        transform: translateY(-50%);
+        border: 0;
+        color: #6259d9;
+        background: transparent;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .auth-submit {
+        min-height: 45px;
+        margin-top: 3px;
+        border: 0;
+        border-radius: 10px;
+        color: #fff;
+        background: linear-gradient(110deg, #6259e8, #7869ee);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .auth-submit:disabled { cursor: wait; opacity: .7; }
+
+      .auth-switch {
+        width: 100%;
+        margin-top: 13px;
+        padding: 5px;
+        border: 0;
+        color: #6259d9;
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .auth-status {
+        min-height: 18px;
+        margin: 12px 0 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .auth-status[data-state="error"] { color: #c04450; }
+      .auth-status[data-state="success"] { color: #21805d; }
+
+      @media (max-width: 380px) {
+        .privacy { display: none; }
+        .topbar { flex-wrap: wrap; }
+        .auth-open-button { margin-left: auto; }
+        .theme-toggle { margin-left: auto; }
+      }
+
       .report-card {
         margin: -42px 0 70px;
         padding: 25px;
@@ -793,6 +968,9 @@
           </svg>
           Processamento seguro
         </div>
+        <button class="auth-open-button" id="auth-open" type="button">Entrar / Cadastrar</button>
+        <span class="auth-user" id="auth-user" hidden></span>
+        <button class="auth-logout-button" id="auth-logout" type="button" hidden>Sair</button>
         <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar modo escuro" title="Ativar modo escuro">
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.7" stroke="currentColor" stroke-width="1.7"/>
@@ -936,6 +1114,41 @@
       </section>
     </div>
 
+    <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
+      <div class="auth-content">
+        <div class="auth-heading">
+          <div>
+            <h2 class="auth-title" id="auth-title">Entrar na sua conta</h2>
+            <p class="auth-description" id="auth-description">Acesse sua conta com e-mail e senha.</p>
+          </div>
+          <button class="auth-close" id="auth-close" type="button" aria-label="Fechar">×</button>
+        </div>
+        <form class="auth-form" id="auth-form">
+          <label class="auth-field" for="auth-email">
+            E-mail
+            <input id="auth-email" name="email" type="email" autocomplete="email" required>
+          </label>
+          <label class="auth-field" for="auth-password">
+            Senha
+            <span class="auth-password-control">
+              <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" required>
+              <button class="auth-password-toggle" type="button" data-password-target="auth-password" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <label class="auth-field" id="auth-confirmation-field" for="auth-password-confirmation" hidden>
+            Confirmar senha
+            <span class="auth-password-control">
+              <input id="auth-password-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" minlength="8">
+              <button class="auth-password-toggle" type="button" data-password-target="auth-password-confirmation" aria-label="Mostrar confirmação de senha" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <button class="auth-submit" id="auth-submit" type="submit">Entrar</button>
+        </form>
+        <button class="auth-switch" id="auth-switch" type="button">Ainda não tem conta? Cadastre-se</button>
+        <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+      </div>
+    </dialog>
+
     <script>
       const form = document.querySelector("#upload-form");
       const fileInput = document.querySelector("#file-input");
@@ -949,6 +1162,30 @@
       const themeToggle = document.querySelector("#theme-toggle");
       const themeLabel = document.querySelector("#theme-label");
       const themeColor = document.querySelector('meta[name="theme-color"]');
+      const authDialog = document.querySelector("#auth-dialog");
+      const authOpenButton = document.querySelector("#auth-open");
+      const authCloseButton = document.querySelector("#auth-close");
+      const authForm = document.querySelector("#auth-form");
+      const authTitle = document.querySelector("#auth-title");
+      const authDescription = document.querySelector("#auth-description");
+      const authSubmitButton = document.querySelector("#auth-submit");
+      const authSwitchButton = document.querySelector("#auth-switch");
+      const authStatus = document.querySelector("#auth-status");
+      const authPassword = document.querySelector("#auth-password");
+      const authConfirmationField = document.querySelector("#auth-confirmation-field");
+      const authPasswordConfirmation = document.querySelector("#auth-password-confirmation");
+      const passwordToggleButtons = document.querySelectorAll(".auth-password-toggle");
+      const authUserLabel = document.querySelector("#auth-user");
+      const authLogoutButton = document.querySelector("#auth-logout");
+      const authStorageKeys = {
+        token: "dados-em-ordem-access-token",
+        email: "dados-em-ordem-user-email",
+      };
+      let authenticatedUser = {
+        accessToken: localStorage.getItem(authStorageKeys.token),
+        email: localStorage.getItem(authStorageKeys.email),
+      };
+      let authMode = "login";
       const savedTheme = localStorage.getItem("dados-em-ordem-theme");
       const initialTheme = savedTheme === "dark" || savedTheme === "light"
         ? savedTheme
@@ -970,8 +1207,151 @@
         localStorage.setItem("dados-em-ordem-theme", theme);
       });
 
+      function updateAuthHeader() {
+        const isAuthenticated = Boolean(authenticatedUser.accessToken && authenticatedUser.email);
+        authOpenButton.hidden = isAuthenticated;
+        authUserLabel.hidden = !isAuthenticated;
+        authLogoutButton.hidden = !isAuthenticated;
+        authUserLabel.textContent = isAuthenticated ? authenticatedUser.email : "";
+      }
+
+      function isAuthenticated() {
+        return Boolean(authenticatedUser.accessToken && authenticatedUser.email);
+      }
+
+      function promptLogin(message) {
+        setAuthMode("login");
+        authStatus.textContent = message;
+        authDialog.showModal();
+      }
+
+      updateAuthHeader();
+
+      function setAuthMode(mode) {
+        authMode = mode;
+        const registering = mode === "register";
+        authTitle.textContent = registering ? "Criar sua conta" : "Entrar na sua conta";
+        authDescription.textContent = registering
+          ? "Cadastre-se com seu e-mail e crie uma senha com pelo menos 8 caracteres."
+          : "Acesse sua conta com e-mail e senha.";
+        authSubmitButton.textContent = registering ? "Cadastrar" : "Entrar";
+        authSwitchButton.textContent = registering
+          ? "Já tem uma conta? Faça login"
+          : "Ainda não tem conta? Cadastre-se";
+        authPassword.autocomplete = registering ? "new-password" : "current-password";
+        authConfirmationField.hidden = !registering;
+        authPasswordConfirmation.required = registering;
+        authPasswordConfirmation.value = "";
+        authStatus.textContent = "";
+        authStatus.dataset.state = "";
+      }
+
+      authOpenButton.addEventListener("click", () => {
+        promptLogin("");
+      });
+      authCloseButton.addEventListener("click", () => authDialog.close());
+      authLogoutButton.addEventListener("click", () => {
+        localStorage.removeItem(authStorageKeys.token);
+        localStorage.removeItem(authStorageKeys.email);
+        authenticatedUser = { accessToken: null, email: null };
+        updateAuthHeader();
+        fileInput.value = "";
+        fileName.textContent = "Nenhum arquivo selecionado";
+        reportCard.hidden = true;
+      });
+      authSwitchButton.addEventListener("click", () => {
+        setAuthMode(authMode === "login" ? "register" : "login");
+      });
+
+      for (const toggleButton of passwordToggleButtons) {
+        toggleButton.addEventListener("click", () => {
+          const passwordInput = document.getElementById(toggleButton.dataset.passwordTarget);
+          const isVisible = passwordInput.type === "text";
+          passwordInput.type = isVisible ? "password" : "text";
+          toggleButton.textContent = isVisible ? "Mostrar" : "Ocultar";
+          toggleButton.setAttribute(
+            "aria-label",
+            isVisible ? "Mostrar senha" : "Ocultar senha"
+          );
+          toggleButton.setAttribute("aria-pressed", String(!isVisible));
+        });
+      }
+
+      authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (authMode === "register" && authPassword.value !== authPasswordConfirmation.value) {
+          window.alert("As senhas não coincidem. Confirme a senha antes de continuar.");
+          authPasswordConfirmation.focus();
+          return;
+        }
+
+        authSubmitButton.disabled = true;
+        authStatus.textContent = authMode === "register" ? "Criando sua conta…" : "Entrando…";
+        authStatus.dataset.state = "";
+
+        try {
+          const response = await fetch(authMode === "register" ? "/api/register" : "/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: authForm.elements.email.value,
+              password: authForm.elements.password.value,
+            }),
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Não foi possível concluir a solicitação.");
+          }
+
+          if (authMode === "register") {
+            authForm.elements.password.value = "";
+            setAuthMode("login");
+            authStatus.textContent = "Cadastro realizado. Agora você pode entrar com sua conta.";
+            authStatus.dataset.state = "success";
+          } else {
+            if (
+              typeof result.accessToken !== "string"
+              || typeof result.user?.email !== "string"
+            ) {
+              throw new Error("A resposta do servidor não contém os dados de autenticação esperados.");
+            }
+
+            localStorage.setItem(authStorageKeys.token, result.accessToken);
+            localStorage.setItem(authStorageKeys.email, result.user.email);
+            authenticatedUser = {
+              accessToken: result.accessToken,
+              email: result.user.email,
+            };
+            updateAuthHeader();
+            authForm.elements.password.value = "";
+            authDialog.close();
+            if (pendingUploadFile) {
+              const file = pendingUploadFile;
+              pendingUploadFile = null;
+              setFile(file);
+            }
+          }
+        } catch (error) {
+          authStatus.textContent = error instanceof Error
+            ? error.message
+            : "Não foi possível conectar ao servidor.";
+          authStatus.dataset.state = "error";
+        } finally {
+          authSubmitButton.disabled = false;
+        }
+      });
+
+      let pendingUploadFile = null;
+
       function setFile(file) {
         if (!file) return;
+        if (!isAuthenticated()) {
+          pendingUploadFile = file;
+          promptLogin("Entre na sua conta para carregar e limpar um ficheiro.");
+          return;
+        }
+
         const transfer = new DataTransfer();
         transfer.items.add(file);
         fileInput.files = transfer.files;
@@ -1042,6 +1422,11 @@
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (!isAuthenticated()) {
+          promptLogin("Entre na sua conta antes de limpar um ficheiro.");
+          return;
+        }
+
         if (!fileInput.files.length) {
           status.textContent = "Selecione um arquivo CSV ou Excel antes de continuar.";
           status.dataset.state = "error";
