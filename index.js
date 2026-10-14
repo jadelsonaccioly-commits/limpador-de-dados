@@ -4,10 +4,15 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const XLSX = require("xlsx");
 
+// Importação e configuração do Supabase com a chave oficial
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gnltfvoizpewwlighuhp.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdubHRmdm9penBld3dsaWdodWhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MTAzMDIsImV4cCI6MjEwNzQ4NjMwMn0.fjjkNe_SgNzkTKLOkGRUYyzE29biOtFikixgHjTQhwc';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const app = express();
 app.use(express.json());
 
-const users = new Map();
 const sessions = new Map();
 
 const upload = multer({
@@ -22,19 +27,6 @@ const upload = multer({
     callback(null, true);
   },
 });
-
-function derivePasswordHash(password, salt) {
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(password, salt, 64, (error, derivedKey) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      resolve(derivedKey);
-    });
-  });
-}
 
 function formatName(value) {
   return value
@@ -710,7 +702,12 @@ function cleanRows(records, options) {
   return { rows: [originalHeaders, ...cleanedRows.filter(Boolean)], report };
 }
 
-app.post("/api/register", async (request, response) => {
+// ---------------------------------------------------------------------------
+// ROTAS DA API (DEVEM VIR ANTES DOS ARQUIVOS ESTÁTICOS)
+// ---------------------------------------------------------------------------
+
+// Handler unificado para Cadastro (/register, /api/register e /api/signup)
+const handleSignup = async (request, response) => {
   const { email, password } = request.body ?? {};
 
   if (typeof email !== "string" || typeof password !== "string") {
@@ -718,7 +715,7 @@ app.post("/api/register", async (request, response) => {
     return;
   }
 
-  const normalizedEmail = email.trim().toLocaleLowerCase("en-US");
+  const normalizedEmail = email.trim().toLocaleLowerCase("pt-BR");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalizedEmail)) {
     response.status(400).json({ error: "E-mail inválido." });
     return;
@@ -729,27 +726,32 @@ app.post("/api/register", async (request, response) => {
     return;
   }
 
-  if (users.has(normalizedEmail)) {
-    response.status(409).json({ error: "Este e-mail já está cadastrado." });
-    return;
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ email: normalizedEmail, password }]);
+
+    if (error) {
+      if (error.code === '23505') {
+        response.status(409).json({ error: "Este e-mail já está cadastrado." });
+        return;
+      }
+      response.status(400).json({ error: error.message });
+      return;
+    }
+
+    response.status(201).json({ message: 'Usuário cadastrado com sucesso!' });
+  } catch (err) {
+    response.status(500).json({ error: 'Erro interno no servidor.' });
   }
+};
 
-  const salt = crypto.randomBytes(16).toString("hex");
-  const passwordHash = await derivePasswordHash(password, salt);
-  const user = {
-    id: crypto.randomUUID(),
-    email: normalizedEmail,
-    salt,
-    passwordHash,
-  };
-  users.set(normalizedEmail, user);
+app.post('/register', handleSignup);
+app.post('/api/register', handleSignup);
+app.post('/api/signup', handleSignup);
 
-  response.status(201).json({
-    user: { id: user.id, email: user.email },
-  });
-});
-
-app.post("/api/login", async (request, response) => {
+// Handler unificado para Login (/login e /api/login)
+const handleLogin = async (request, response) => {
   const { email, password } = request.body ?? {};
 
   if (typeof email !== "string" || typeof password !== "string") {
@@ -757,29 +759,75 @@ app.post("/api/login", async (request, response) => {
     return;
   }
 
-  const normalizedEmail = email.trim().toLocaleLowerCase("en-US");
-  const user = users.get(normalizedEmail);
-  if (!user) {
-    response.status(401).json({ error: "E-mail ou senha inválidos." });
-    return;
+  const normalizedEmail = email.trim().toLocaleLowerCase("pt-BR");
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .eq('password', password)
+      .single();
+
+    if (error || !data) {
+      response.status(401).json({ error: "E-mail ou senha inválidos." });
+      return;
+    }
+
+    const accessToken = crypto.randomBytes(32).toString("hex");
+    sessions.set(accessToken, data.id);
+
+    response.json({
+      accessToken,
+      user: { id: data.id, email: data.email },
+      message: 'Login bem-sucedido!'
+    });
+  } catch (err) {
+    response.status(500).json({ error: 'Erro interno no servidor.' });
+  }
+};
+
+app.post('/login', handleLogin);
+app.post('/api/login', handleLogin);
+
+// Handler unificado para recuperação de senha (/forgot-password e /api/forgot-password)
+const handleForgotPassword = async (request, response) => {
+  const { email } = request.body ?? {};
+
+  if (!email || typeof email !== "string") {
+    return response.status(400).json({ error: "Informe um e-mail válido." });
   }
 
-  const passwordHash = await derivePasswordHash(password, user.salt);
-  const expectedHash = Buffer.from(user.passwordHash, "hex");
-  if (!crypto.timingSafeEqual(passwordHash, expectedHash)) {
-    response.status(401).json({ error: "E-mail ou senha inválidos." });
-    return;
+  const normalizedEmail = email.trim().toLocaleLowerCase("pt-BR");
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (error || !data) {
+      return response.status(404).json({ message: 'E-mail não encontrado em nossa base.' });
+    }
+
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await supabase
+      .from('users')
+      .update({ reset_token: resetToken })
+      .eq('email', normalizedEmail);
+
+    return response.json({ 
+      message: `Código de recuperação gerado com sucesso! Token: ${resetToken}` 
+    });
+  } catch (err) {
+    return response.status(500).json({ error: 'Erro ao processar recuperação de senha.' });
   }
+};
 
-  const accessToken = crypto.randomBytes(32).toString("hex");
-  sessions.set(accessToken, user.id);
-  response.json({
-    accessToken,
-    user: { id: user.id, email: user.email },
-  });
-});
-
-app.use(express.static(path.join(__dirname, "public")));
+app.post('/forgot-password', handleForgotPassword);
+app.post('/api/forgot-password', handleForgotPassword);
 
 app.post("/upload", upload.single("arquivo"), (request, response, next) => {
   if (!request.file) {
@@ -835,6 +883,13 @@ app.post("/upload", upload.single("arquivo"), (request, response, next) => {
     next(error);
   }
 });
+
+// ---------------------------------------------------------------------------
+// ARQUIVOS ESTÁTICOS E INICIALIZAÇÃO
+// ---------------------------------------------------------------------------
+
+// Servir frontend por último para não interceptar as rotas da API
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use((error, request, response, next) => {
   if (response.headersSent) {

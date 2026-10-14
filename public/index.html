@@ -719,6 +719,7 @@
       }
 
       .auth-form { display: grid; gap: 13px; }
+      .auth-form[hidden] { display: none; }
 
       .auth-field {
         display: grid;
@@ -774,6 +775,48 @@
       }
 
       .auth-submit:disabled { cursor: wait; opacity: .7; }
+
+      .auth-forgot-container {
+        margin-top: 10px;
+        text-align: right;
+      }
+
+      .auth-forgot-container[hidden],
+      .auth-forgot-section[hidden] { display: none; }
+
+      .auth-forgot-link {
+        color: #4f46e5;
+        font-size: 14px;
+        text-decoration: none;
+      }
+
+      .auth-forgot-link:hover { text-decoration: underline; }
+
+      .auth-forgot-section {
+        display: grid;
+        gap: 10px;
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+
+      .auth-forgot-description {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .auth-forgot-actions { display: grid; gap: 7px; }
+
+      .auth-forgot-cancel {
+        min-height: 36px;
+        border: 0;
+        color: var(--text-secondary);
+        background: transparent;
+        cursor: pointer;
+        font-size: 12px;
+      }
 
       .auth-switch {
         width: 100%;
@@ -1143,7 +1186,21 @@
             </span>
           </label>
           <button class="auth-submit" id="auth-submit" type="submit">Entrar</button>
+          <div class="auth-forgot-container" id="auth-forgot-container">
+            <a class="auth-forgot-link" href="#" id="btn-forgot-trigger">Esqueci minha senha</a>
+          </div>
         </form>
+        <section class="auth-forgot-section" id="forgot-container" aria-label="Recuperar senha" hidden>
+          <p class="auth-forgot-description">Digite seu e-mail cadastrado para solicitar a recuperação da senha.</p>
+          <label class="auth-field" for="forgot-email">
+            E-mail
+            <input id="forgot-email" type="email" autocomplete="email" placeholder="seu-email@exemplo.com" required>
+          </label>
+          <div class="auth-forgot-actions">
+            <button class="auth-submit" id="btn-send-forgot" type="button">Enviar instruções</button>
+            <button class="auth-forgot-cancel" id="btn-cancel-forgot" type="button">Voltar ao login</button>
+          </div>
+        </section>
         <button class="auth-switch" id="auth-switch" type="button">Ainda não tem conta? Cadastre-se</button>
         <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
       </div>
@@ -1172,6 +1229,12 @@
       const authSwitchButton = document.querySelector("#auth-switch");
       const authStatus = document.querySelector("#auth-status");
       const authPassword = document.querySelector("#auth-password");
+      const authForgotContainer = document.querySelector("#auth-forgot-container");
+      const forgotContainer = document.querySelector("#forgot-container");
+      const forgotEmail = document.querySelector("#forgot-email");
+      const forgotTrigger = document.querySelector("#btn-forgot-trigger");
+      const sendForgotButton = document.querySelector("#btn-send-forgot");
+      const cancelForgotButton = document.querySelector("#btn-cancel-forgot");
       const authConfirmationField = document.querySelector("#auth-confirmation-field");
       const authPasswordConfirmation = document.querySelector("#auth-password-confirmation");
       const passwordToggleButtons = document.querySelectorAll(".auth-password-toggle");
@@ -1239,9 +1302,13 @@
           ? "Já tem uma conta? Faça login"
           : "Ainda não tem conta? Cadastre-se";
         authPassword.autocomplete = registering ? "new-password" : "current-password";
+        authForgotContainer.hidden = registering;
         authConfirmationField.hidden = !registering;
         authPasswordConfirmation.required = registering;
         authPasswordConfirmation.value = "";
+        authForm.hidden = false;
+        forgotContainer.hidden = true;
+        authSwitchButton.hidden = false;
         authStatus.textContent = "";
         authStatus.dataset.state = "";
       }
@@ -1261,6 +1328,58 @@
       });
       authSwitchButton.addEventListener("click", () => {
         setAuthMode(authMode === "login" ? "register" : "login");
+      });
+
+      forgotTrigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        forgotEmail.value = authForm.elements.email.value;
+        authForm.hidden = true;
+        authSwitchButton.hidden = true;
+        forgotContainer.hidden = false;
+        authStatus.textContent = "";
+        authStatus.dataset.state = "";
+        forgotEmail.focus();
+      });
+
+      cancelForgotButton.addEventListener("click", () => {
+        forgotContainer.hidden = true;
+        authForm.hidden = false;
+        authSwitchButton.hidden = false;
+        authStatus.textContent = "";
+        authStatus.dataset.state = "";
+      });
+
+      sendForgotButton.addEventListener("click", async () => {
+        if (!forgotEmail.reportValidity()) {
+          return;
+        }
+
+        sendForgotButton.disabled = true;
+        authStatus.textContent = "Solicitando instruções de recuperação…";
+        authStatus.dataset.state = "";
+
+        try {
+          const response = await fetch("/api/forgot-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: forgotEmail.value.trim() }),
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Não foi possível solicitar a recuperação da senha.");
+          }
+
+          authStatus.textContent = result.message || "Se o e-mail estiver cadastrado, você receberá instruções para recuperar sua senha.";
+          authStatus.dataset.state = "success";
+        } catch (error) {
+          authStatus.textContent = error instanceof Error
+            ? error.message
+            : "Não foi possível conectar ao servidor.";
+          authStatus.dataset.state = "error";
+        } finally {
+          sendForgotButton.disabled = false;
+        }
       });
 
       for (const toggleButton of passwordToggleButtons) {
