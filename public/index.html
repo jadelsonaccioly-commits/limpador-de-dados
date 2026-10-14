@@ -222,9 +222,7 @@
         line-height: 1.04;
       }
 
-      h1 span {
-        color: #6c61e9;
-      }
+      h1 span { color: #6c61e9; }
 
       .intro {
         max-width: 470px;
@@ -288,6 +286,7 @@
         border-radius: 16px;
         background: #fafbff;
         text-align: center;
+        cursor: pointer;
         transition: border-color .18s ease, background .18s ease, transform .18s ease;
       }
 
@@ -335,12 +334,6 @@
         cursor: pointer;
         font-size: 12px;
         font-weight: 700;
-        transition: background .18s ease, border-color .18s ease;
-      }
-
-      .browse-button:hover {
-        border-color: #c8c4fa;
-        background: #f8f7ff;
       }
 
       .file-input {
@@ -350,28 +343,21 @@
         overflow: hidden;
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
-        clip-path: inset(50%);
       }
 
       .file-name {
-        max-width: 100%;
         margin: 12px 0 0;
-        overflow: hidden;
         color: #5c6680;
         font-size: 11px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
 
       .options-panel {
         display: block;
         width: 100%;
-        margin: 0;
+        margin: 24px 0 0;
         padding: 0;
         border: 0;
       }
-
-      .options-panel[hidden] { display: block; }
 
       .options-panel legend {
         margin-bottom: 14px;
@@ -387,19 +373,10 @@
       }
 
       .option-group {
-        min-width: 0;
         padding: 0 13px 13px;
         border: 1px solid var(--border-soft);
         border-radius: 16px;
         background: var(--surface);
-        box-shadow: 0 8px 24px rgba(47, 59, 97, .06);
-        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
-      }
-
-      .option-group:hover {
-        transform: translateY(-3px);
-        border-color: #c9c5f7;
-        box-shadow: 0 15px 32px rgba(47, 59, 97, .12);
       }
 
       .option-group summary {
@@ -414,60 +391,23 @@
         list-style: none;
       }
 
-      .option-group summary::-webkit-details-marker { display: none; }
-
-      .option-group summary::after {
-        width: 8px;
-        height: 8px;
-        margin-left: auto;
-        border-right: 1.5px solid currentColor;
-        border-bottom: 1.5px solid currentColor;
-        content: "";
-        transform: rotate(45deg) translateY(-2px);
-        transition: transform .18s ease;
-      }
-
-      .option-group[open] summary::after {
-        transform: rotate(225deg) translate(-2px, -1px);
-      }
-
       .category-icon {
         display: grid;
         width: 30px;
         height: 30px;
-        flex: 0 0 30px;
         place-items: center;
         border-radius: 9px;
         color: #6259db;
         background: #f0efff;
       }
 
-      .option-group[open] summary { margin-bottom: 2px; }
-
-      .option-group:nth-of-type(2) .category-icon {
-        color: #337b64;
-        background: #eaf7f0;
-      }
-
-      .option-group:nth-of-type(3) .category-icon {
-        color: #b47831;
-        background: #fff4e4;
-      }
-
-      .option-group:nth-of-type(4) .category-icon {
-        color: #b35773;
-        background: #fff0f4;
-      }
-
       .option-list {
         display: grid;
-        grid-template-columns: 1fr;
         gap: 7px;
       }
 
       .option-item {
         display: flex;
-        min-height: 38px;
         align-items: flex-start;
         gap: 8px;
         padding: 9px;
@@ -478,152 +418,6 @@
         cursor: pointer;
         font-size: 10px;
         font-weight: 600;
-        transition: border-color .18s ease, background .18s ease, transform .18s ease;
-      }
-
-      .option-item:hover {
-        transform: translateY(-1px);
-        border-color: #c9c5f7;
-      }
-
-      .option-item input {
-        width: 16px;
-        height: 16px;
-        flex: 0 0 16px;
-        margin: 0;
-        accent-color: #6c61e9;
-        cursor: pointer;
-      }
-
-      .option-item:has(input:checked) {
-        border-color: rgba(108, 97, 233, .35);
-        background: rgba(108, 97, 233, .07);
-      }
-
-      .option-item input:focus-visible {
-        outline: 3px solid rgba(108, 97, 233, .3);
-        outline-offset: 2px;
-      }
-
-      .output-format {
-        display: grid;
-        gap: 8px;
-        margin-top: 17px;
-        color: #303b54;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .output-format select {
-        width: 100%;
-        min-height: 42px;
-        padding: 0 12px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        color: var(--text-secondary);
-        background: var(--surface-muted);
-        font-size: 12px;
-      }
-
-      :root[data-theme="dark"] body {
-        background:
-          radial-gradient(ellipse at 12% 5%, rgba(70, 72, 160, .2), transparent 34rem),
-          radial-gradient(ellipse at 95% 90%, rgba(31, 115, 105, .16), transparent 30rem),
-          var(--page-bg);
-      }
-
-      :root[data-theme="dark"] .features li,
-      :root[data-theme="dark"] .option-item,
-      :root[data-theme="dark"] .metric {
-        border-color: var(--border-soft);
-        color: var(--text-secondary);
-        background: var(--surface-muted);
-      }
-
-      :root[data-theme="dark"] .option-group,
-      :root[data-theme="dark"] .upload-card,
-      :root[data-theme="dark"] .report-card,
-      :root[data-theme="dark"] .topbar {
-        border-color: var(--border);
-        background: var(--surface);
-      }
-
-      :root[data-theme="dark"] .drop-zone {
-        border-color: #46516a;
-        background: var(--surface-muted);
-      }
-
-      :root[data-theme="dark"] .drop-zone.is-dragging {
-        border-color: #8b82fa;
-        background: #242541;
-      }
-
-      :root[data-theme="dark"] .browse-button {
-        border-color: var(--border);
-        color: #c1bbff;
-        background: var(--surface-solid);
-      }
-
-      :root[data-theme="dark"] .browse-button:hover,
-      :root[data-theme="dark"] .option-item:hover {
-        background: #202942;
-      }
-
-      :root[data-theme="dark"] .card-description,
-      :root[data-theme="dark"] .drop-help,
-      :root[data-theme="dark"] .file-name,
-      :root[data-theme="dark"] .report-description,
-      :root[data-theme="dark"] .metric-label {
-        color: var(--text-muted);
-      }
-
-      :root[data-theme="dark"] .drop-title,
-      :root[data-theme="dark"] .options-panel legend,
-      :root[data-theme="dark"] .output-format,
-      :root[data-theme="dark"] .report-title,
-      :root[data-theme="dark"] .metric-value {
-        color: var(--text-primary);
-      }
-
-      :root[data-theme="dark"] .category-icon {
-        color: #c1bbff;
-        background: #292746;
-      }
-
-      :root[data-theme="dark"] .option-group:nth-of-type(2) .category-icon {
-        color: #83d3ad;
-        background: #1d3934;
-      }
-
-      :root[data-theme="dark"] .option-group:nth-of-type(3) .category-icon {
-        color: #edbd78;
-        background: #3a3025;
-      }
-
-      :root[data-theme="dark"] .option-group:nth-of-type(4) .category-icon {
-        color: #ee9db7;
-        background: #392733;
-      }
-
-      :root[data-theme="dark"] .option-item:has(input:checked) {
-        border-color: rgba(157, 149, 255, .45);
-        color: #e5e1ff;
-        background: rgba(108, 97, 233, .18);
-      }
-
-      :root[data-theme="dark"] .report-validations {
-        color: #a5ddc0;
-        background: #18372f;
-      }
-
-      :root[data-theme="dark"] .validation-list li {
-        color: #e4b3b3;
-        background: #38272f;
-      }
-
-      :root[data-theme="dark"] .validation-list li.is-clean {
-        color: #a5ddc0;
-        background: #18372f;
       }
 
       .submit-button {
@@ -632,362 +426,35 @@
         min-height: 48px;
         align-items: center;
         justify-content: center;
-        gap: 9px;
-        margin-top: 15px;
+        margin-top: 20px;
         border: 0;
         border-radius: 11px;
         color: #fff;
         background: linear-gradient(110deg, #6259e8, #7869ee);
-        box-shadow: 0 8px 17px rgba(101, 89, 230, .2);
         cursor: pointer;
         font-size: 13px;
         font-weight: 700;
-        transition: filter .18s ease, transform .18s ease;
-      }
-
-      .submit-button:hover:not(:disabled) {
-        transform: translateY(-1px);
-        filter: brightness(1.04);
-      }
-
-      .submit-button:disabled {
-        cursor: wait;
-        opacity: .7;
       }
 
       .status {
-        min-height: 18px;
-        margin: 12px 0 0;
-        color: #69748a;
+        margin-top: 12px;
         font-size: 11px;
-        line-height: 1.55;
       }
 
-      .status[data-state="error"] { color: #c04450; }
-      .status[data-state="success"] { color: #21805d; }
-
-      .auth-dialog {
-        width: min(100% - 32px, 420px);
+      /* Estilos do Modal de Autenticação */
+      dialog {
         padding: 0;
-        overflow: visible;
         border: 1px solid var(--border);
         border-radius: 18px;
-        color: var(--text-primary);
         background: var(--surface-solid);
+        color: var(--text-primary);
+        max-width: 400px;
+        width: 90%;
         box-shadow: var(--shadow-card);
       }
-
-      .auth-dialog::backdrop {
-        background: rgba(13, 18, 32, .58);
+      dialog::backdrop {
+        background: rgba(13, 18, 32, .6);
         backdrop-filter: blur(4px);
-      }
-
-      .auth-content { padding: 25px; }
-
-      .auth-heading {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-      }
-
-      .auth-title {
-        margin: 0;
-        font-size: 21px;
-        letter-spacing: -.035em;
-      }
-
-      .auth-description {
-        margin: 7px 0 18px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.55;
-      }
-
-      .auth-close {
-        display: grid;
-        width: 34px;
-        height: 34px;
-        flex: 0 0 auto;
-        place-items: center;
-        border: 1px solid var(--border);
-        border-radius: 9px;
-        color: var(--text-secondary);
-        background: var(--surface-muted);
-        cursor: pointer;
-        font-size: 19px;
-      }
-
-      .auth-form { display: grid; gap: 13px; }
-      .auth-form[hidden] { display: none; }
-
-      .auth-field {
-        display: grid;
-        gap: 6px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-weight: 650;
-      }
-
-      .auth-field[hidden] { display: none; }
-
-      .auth-field input {
-        width: 100%;
-        min-height: 43px;
-        padding: 0 76px 0 12px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        outline-color: #7869ee;
-        color: var(--text-primary);
-        background: var(--surface-muted);
-        font-size: 13px;
-      }
-
-      .auth-password-control {
-        position: relative;
-        display: block;
-      }
-
-      .auth-password-toggle {
-        position: absolute;
-        top: 50%;
-        right: 9px;
-        padding: 5px 3px;
-        transform: translateY(-50%);
-        border: 0;
-        color: #6259d9;
-        background: transparent;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 700;
-      }
-
-      .auth-submit {
-        min-height: 45px;
-        margin-top: 3px;
-        border: 0;
-        border-radius: 10px;
-        color: #fff;
-        background: linear-gradient(110deg, #6259e8, #7869ee);
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 700;
-      }
-
-      .auth-submit:disabled { cursor: wait; opacity: .7; }
-
-      .auth-forgot-container {
-        margin-top: 10px;
-        text-align: right;
-      }
-
-      .auth-forgot-container[hidden],
-      .auth-forgot-section[hidden] { display: none; }
-
-      .auth-forgot-link {
-        color: #4f46e5;
-        font-size: 14px;
-        text-decoration: none;
-      }
-
-      .auth-forgot-link:hover { text-decoration: underline; }
-
-      .auth-forgot-section {
-        display: grid;
-        gap: 10px;
-        margin-top: 15px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border);
-      }
-
-      .auth-forgot-description {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .auth-forgot-actions { display: grid; gap: 7px; }
-
-      .auth-forgot-cancel {
-        min-height: 36px;
-        border: 0;
-        color: var(--text-secondary);
-        background: transparent;
-        cursor: pointer;
-        font-size: 12px;
-      }
-
-      .auth-switch {
-        width: 100%;
-        margin-top: 13px;
-        padding: 5px;
-        border: 0;
-        color: #6259d9;
-        background: transparent;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 650;
-      }
-
-      .auth-status {
-        min-height: 18px;
-        margin: 12px 0 0;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .auth-status[data-state="error"] { color: #c04450; }
-      .auth-status[data-state="success"] { color: #21805d; }
-
-      @media (max-width: 380px) {
-        .privacy { display: none; }
-        .topbar { flex-wrap: wrap; }
-        .auth-open-button { margin-left: auto; }
-        .theme-toggle { margin-left: auto; }
-      }
-
-      .report-card {
-        margin: -42px 0 70px;
-        padding: 25px;
-        border: 1px solid rgba(227, 231, 242, .9);
-        border-radius: 20px;
-        background: rgba(255, 255, 255, .92);
-        box-shadow: 0 18px 50px rgba(47, 59, 97, .08);
-      }
-
-      .report-card[hidden] { display: none; }
-
-      .report-heading {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 18px;
-      }
-
-      .report-title {
-        margin: 0;
-        font-size: 17px;
-        font-weight: 730;
-        letter-spacing: -.035em;
-      }
-
-      .report-description {
-        margin: 6px 0 0;
-        color: #8992a5;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .report-validations {
-        flex: 0 0 auto;
-        padding: 8px 11px;
-        border-radius: 9px;
-        color: #416b5c;
-        background: #eff8f3;
-        font-size: 11px;
-        font-weight: 650;
-      }
-
-      .metrics {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .metric {
-        min-height: 92px;
-        padding: 16px;
-        border: 1px solid #edf0f6;
-        border-radius: 13px;
-        background: #fbfcff;
-      }
-
-      .metric-label {
-        margin: 0;
-        color: #7c879b;
-        font-size: 11px;
-        font-weight: 600;
-      }
-
-      .metric-value {
-        margin: 8px 0 0;
-        color: #25304a;
-        font-size: 25px;
-        font-weight: 760;
-        letter-spacing: -.05em;
-      }
-
-      .metric[data-tone="success"] .metric-value { color: #21805d; }
-      .metric[data-tone="error"] .metric-value { color: #c04450; }
-
-      .validation-list {
-        display: grid;
-        gap: 8px;
-        margin: 17px 0 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .validation-list li {
-        display: flex;
-        align-items: flex-start;
-        gap: 9px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        color: #68748a;
-        background: #fff7f6;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .validation-list li::before {
-        width: 7px;
-        height: 7px;
-        flex: 0 0 7px;
-        margin-top: 5px;
-        border-radius: 50%;
-        background: #df7c75;
-        content: "";
-      }
-
-      .validation-list li.is-clean {
-        color: #557467;
-        background: #f2f9f5;
-      }
-
-      .validation-list li.is-clean::before { background: #55a27c; }
-
-      @media (max-width: 760px) {
-        .page { width: min(100% - 32px, 520px); }
-        .topbar { margin-top: 14px; padding: 10px 12px; }
-        main {
-          gap: 25px;
-          padding: 45px 0 56px;
-        }
-        h1 { font-size: clamp(42px, 11vw, 62px); }
-        .intro { margin-top: 17px; font-size: 14px; }
-        .features { margin-top: 20px; }
-        .upload-card { padding: 21px; }
-        .report-card { margin: 0 0 42px; padding: 19px; }
-        .report-heading { flex-direction: column; }
-        .metrics { gap: 8px; }
-        .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-        .metric { min-height: 84px; padding: 12px; }
-        .metric-label { font-size: 10px; }
-        .metric-value { font-size: 22px; }
-      }
-
-      @media (max-width: 380px) {
-        .privacy { font-size: 10px; }
-        .brand { font-size: 14px; }
-        .theme-toggle { min-height: 36px; padding: 0 9px; font-size: 10px; }
-        .upload-card { padding: 17px; }
-        .metrics { grid-template-columns: 1fr; }
-        .metric { min-height: 0; }
-        .module-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -1068,7 +535,7 @@
                   <label class="option-item"><input type="checkbox" name="options" value="formatCpfs" checked>Formatar CPF</label>
                   <label class="option-item"><input type="checkbox" name="options" value="formatCnpjs" checked>Formatar CNPJ</label>
                   <label class="option-item"><input type="checkbox" name="options" value="cleanRgIe" checked>Limpar RG/IE</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="simplifyCompanyName" checked>Razão Social (remover LTDA/ME)</label>
+                  <label class="option-item"><input type="checkbox" name="options" value="simplifyCompanyName" checked>Razão Social</label>
                 </div>
               </details>
               <details class="option-group" open>
@@ -1104,29 +571,130 @@
               <span class="upload-icon" aria-hidden="true">
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
                   <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2
-</form>
-  </main>
+                  <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <p class="drop-title">Arraste e solte seu arquivo aqui</p>
+              <p class="drop-help">ou procure no computador</p>
+              <button class="browse-button" type="button">Selecionar arquivo</button>
+              <input class="file-input" id="file-input" type="file" name="file" accept=".csv, .xlsx, .xls">
+              <p class="file-name" id="file-name">Nenhum arquivo selecionado</p>
+            </div>
+            <button class="submit-button" id="submit-button" type="submit">Limpar e padronizar planilha</button>
+            <p class="status" id="status" data-state=""></p>
+          </section>
+        </form>
 
-  <!-- Secção de Planos e Preços -->
-  <section id="pricing" class="pricing-section" style="padding: 40px 20px; text-align: center;">
-    <h2>Escolha o seu plano</h2>
-    <div class="pricing-card" style="max-width: 400px; margin: 20px auto; background: #1e1e2f; padding: 30px; border-radius: 10px; color: #fff;">
-      <h3>Plano Pro</h3>
-      <p class="price" style="font-size: 32px; font-weight: bold; color: #4f46e5;">R$ 29<span style="font-size: 14px;">/mês</span></p>
-      <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0;">
-        <li style="margin-bottom: 10px;">✓ Limpeza ilimitada de ficheiros</li>
-        <li style="margin-bottom: 10px;">✓ Formatador de CPF, CNPJ e CEP</li>
-        <li style="margin-bottom: 10px;">✓ Validador de E-mails e Telefones</li>
-        <li style="margin-bottom: 10px;">✓ Suporte prioritário</li>
-      </ul>
-      <button id="btn-subscribe-pro" class="btn-primary" style="background: #4f46e5; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">Assinar Plano Pro</button>
+        <!-- Cartão de Relatório de Limpeza -->
+        <section class="report-card" id="report-card" hidden>
+          <div class="report-heading">
+            <div>
+              <h2 class="report-title">Relatório da limpeza</h2>
+              <p class="report-description">Resumo das correções efetuadas no seu ficheiro.</p>
+            </div>
+            <span class="report-validations" id="report-validations"></span>
+          </div>
+          <div class="metrics">
+            <div class="metric">
+              <p class="metric-label">Linhas processadas</p>
+              <p class="metric-value" id="metric-total">0</p>
+            </div>
+            <div class="metric">
+              <p class="metric-label">Valores corrigidos</p>
+              <p class="metric-value" id="metric-corrected">0</p>
+            </div>
+            <div class="metric">
+              <p class="metric-label">Inconsistências</p>
+              <p class="metric-value" id="metric-alerts">0</p>
+            </div>
+          </div>
+          <ul class="validation-list" id="validation-list"></ul>
+        </section>
+
+        <!-- Secção de Planos e Preços -->
+        <section id="pricing" class="pricing-section" style="padding: 40px 20px; text-align: center;">
+          <h2>Escolha o seu plano</h2>
+          <div class="pricing-card" style="max-width: 400px; margin: 20px auto; background: var(--surface); padding: 30px; border-radius: 10px; border: 1px solid var(--border);">
+            <h3>Plano Pro</h3>
+            <p class="price" style="font-size: 32px; font-weight: bold; color: #4f46e5;">R$ 29<span style="font-size: 14px;">/mês</span></p>
+            <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0; font-size: 13px;">
+              <li style="margin-bottom: 10px;">✓ Limpeza ilimitada de ficheiros</li>
+              <li style="margin-bottom: 10px;">✓ Formatador de CPF, CNPJ e CEP</li>
+              <li style="margin-bottom: 10px;">✓ Validador de E-mails e Telefones</li>
+              <li style="margin-bottom: 10px;">✓ Suporte prioritário</li>
+            </ul>
+            <button id="btn-subscribe-pro" class="btn-primary" style="background: #4f46e5; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">Assinar Plano Pro</button>
+          </div>
+        </section>
+      </main>
     </div>
-  </section>
 
-</div> <!-- Fim de .page -->
+    <!-- Modal de Autenticação / Login -->
+    <dialog id="auth-dialog">
+      <div class="auth-content">
+        <div class="auth-heading">
+          <h2 class="auth-title" id="auth-title">Entrar na sua conta</h2>
+          <button class="auth-close" id="auth-close" type="button">✕</button>
+        </div>
+        <p class="auth-description" id="auth-description">Acesse sua conta com e-mail e senha.</p>
+        
+        <form class="auth-form" id="auth-form">
+          <label class="auth-field">
+            E-mail
+            <input type="email" name="email" required autocomplete="email">
+          </label>
+          <label class="auth-field">
+            Senha
+            <span class="auth-password-control">
+              <input type="password" id="auth-password" name="password" required>
+              <button type="button" class="auth-password-toggle" data-password-target="auth-password">Mostrar</button>
+            </span>
+          </label>
+          <label class="auth-field" id="auth-confirmation-field" hidden>
+            Confirmar Senha
+            <input type="password" id="auth-password-confirmation">
+          </label>
+          <div class="auth-forgot-container" id="auth-forgot-container">
+            <button type="button" class="auth-forgot-link" id="btn-forgot-trigger" style="background:none; border:none; cursor:pointer; padding:0;">Esqueceu a senha?</button>
+          </div>
+          <button type="submit" class="auth-submit" id="auth-submit">Entrar</button>
+        </form>
 
-<!-- Script principal -->
-<script src="/script.js"></script>
-</body>
+        <!-- Recuperação de Senha -->
+        <div class="auth-forgot-section" id="forgot-container" hidden>
+          <div id="forgot-step-1">
+            <p class="auth-forgot-description">Digite seu e-mail para receber as instruções de recuperação.</p>
+            <label class="auth-field" style="margin-top:8px;">
+              E-mail
+              <input type="email" id="forgot-email" required>
+            </label>
+            <div class="auth-forgot-actions" style="margin-top:10px;">
+              <button type="button" class="auth-submit" id="btn-send-forgot">Enviar Token</button>
+              <button type="button" class="auth-forgot-cancel" id="btn-cancel-forgot">Cancelar</button>
+            </div>
+          </div>
+          <div id="forgot-step-2" style="display: none;">
+            <p class="auth-forgot-description">Insira o token recebido e defina a nova senha.</p>
+            <label class="auth-field" style="margin-top:8px;">
+              Token de Recuperação
+              <input type="text" id="recovery-token">
+            </label>
+            <label class="auth-field" style="margin-top:8px;">
+              Nova Senha
+              <input type="password" id="new-password">
+            </label>
+            <div class="auth-forgot-actions" style="margin-top:10px;">
+              <button type="button" class="auth-submit" id="btn-update-password" style="background: #21805d;">Atualizar Senha</button>
+              <button type="button" class="auth-forgot-cancel" id="btn-cancel-step2">Voltar</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="auth-status" id="auth-status" data-state=""></p>
+        <button type="button" class="auth-switch" id="auth-switch">Ainda não tem conta? Cadastre-se</button>
+      </div>
+    </dialog>
+
+    <script src="/script.js"></script>
+  </body>
 </html>
