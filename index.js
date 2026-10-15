@@ -39,37 +39,36 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Rota de Recuperação de Senha via OTP/Token com Envio pelo Resend
+// Rota de Recuperação de Senha (Usa resetPasswordForEmail e dispara o Resend)
 app.post('/api/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
-    const { data, error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: false
-      }
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://www.datacleanbr.com.br'
     });
     if (error) throw error;
 
     await resend.emails.send({
       from: 'Dados em Ordem <onboarding@resend.dev>',
       to: [email],
-      subject: 'Código de Recuperação — Dados em Ordem',
+      subject: 'Recuperação de Senha — Dados em Ordem',
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #17213b; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
           <h2 style="color: #2563eb; margin-top: 0;">Recuperação de Senha</h2>
           <p>Olá,</p>
           <p>Você solicitou a redefinição de senha para a sua conta no <strong>Dados em Ordem</strong>.</p>
-          <p>Copie o código/token gerado e insira-o na tela de recuperação do site juntamente com a sua nova senha.</p>
-          <br>
-          <p style="font-size: 13px; color: #4b5563;">Acesse o site: <a href="https://www.datacleanbr.com.br" style="color: #2563eb;">datacleanbr.com.br</a></p>
+          <p>Para redefinir a sua senha com segurança, acesse o nosso site:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://www.datacleanbr.com.br" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acessar o Site</a>
+          </div>
+          <p style="font-size: 13px; color: #4b5563;">Insira o seu e-mail e proceda com a atualização na plataforma.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
           <p style="font-size: 12px; color: #6b7280; margin-bottom: 0;">Se você não solicitou esta alteração, pode ignorar este e-mail com segurança.</p>
         </div>
       `
     });
 
-    res.json({ message: 'Código de recuperação enviado para o seu e-mail!' });
+    res.json({ message: 'Instruções de recuperação enviadas para o seu e-mail.' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
