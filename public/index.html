@@ -15,18 +15,25 @@
       }
     </script>
     <style>
-      /* Correção de layout para o modal de autenticação */
+      /* Correção definitiva para o layout e visibilidade do modal */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
 .auth-form[hidden], 
 .auth-forgot-section[hidden],
 #forgot-step-1[hidden],
 #forgot-step-2[hidden] {
   display: none !important;
-}
-
-#forgot-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
       :root {
         color-scheme: light;
