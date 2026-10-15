@@ -39,15 +39,10 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Rota de Recuperação de Senha (Usa resetPasswordForEmail e dispara o Resend)
+// Rota de Solicitação de Recuperação (Envia E-mail via Resend)
 app.post('/api/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://www.datacleanbr.com.br'
-    });
-    if (error) throw error;
-
     await resend.emails.send({
       from: 'Dados em Ordem <onboarding@resend.dev>',
       to: [email],
@@ -56,37 +51,31 @@ app.post('/api/forgot-password', async (req, res) => {
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #17213b; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px;">
           <h2 style="color: #2563eb; margin-top: 0;">Recuperação de Senha</h2>
           <p>Olá,</p>
-          <p>Você solicitou a redefinição de senha para a sua conta no <strong>Dados em Ordem</strong>.</p>
-          <p>Para redefinir a sua senha com segurança, acesse o nosso site:</p>
+          <p>Você solicitou a alteração de senha da sua conta no <strong>Dados em Ordem</strong>.</p>
+          <p>Para definir a sua nova senha, acesse o nosso site e utilize o formulário de redefinição informando o seu e-mail e a nova senha:</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="https://www.datacleanbr.com.br" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acessar o Site</a>
           </div>
-          <p style="font-size: 13px; color: #4b5563;">Insira o seu e-mail e proceda com a atualização na plataforma.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
           <p style="font-size: 12px; color: #6b7280; margin-bottom: 0;">Se você não solicitou esta alteração, pode ignorar este e-mail com segurança.</p>
         </div>
       `
     });
 
-    res.json({ message: 'Instruções de recuperação enviadas para o seu e-mail.' });
+    res.json({ message: 'Instruções enviadas para o seu e-mail!' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Rota para Atualizar/Redefinir a Senha com o Token
+// Rota de Redefinição Direta de Senha (E-mail e Nova Senha)
 app.post('/api/reset-password', async (req, res) => {
-  const { email, token, password } = req.body;
+  const { email, password } = req.body;
   try {
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'recovery'
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://www.datacleanbr.com.br'
     });
-    if (verifyError) throw verifyError;
-
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) throw updateError;
+    if (error) throw error;
 
     res.json({ message: 'Senha atualizada com sucesso!' });
   } catch (error) {
