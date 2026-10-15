@@ -782,36 +782,25 @@ dialog::backdrop {
           <button type="submit" class="auth-submit" id="auth-submit">Entrar</button>
         </form>
 
-        <!-- Recuperação de Senha -->
+       <!-- Recuperação de Senha -->
         <div class="auth-forgot-section" id="forgot-container" hidden>
           <div id="forgot-step-1">
-            <p class="auth-forgot-description">Digite seu e-mail para receber as instruções de recuperação.</p>
+            <p class="auth-forgot-description">Digite seu e-mail e a nova senha desejada.</p>
             <label class="auth-field" style="margin-top:8px;">
               E-mail
               <input type="email" id="forgot-email" required>
             </label>
-            <div class="auth-forgot-actions" style="margin-top:10px;">
-              <button type="button" class="auth-submit" id="btn-send-forgot">Enviar Token</button>
-              <button type="button" class="auth-forgot-cancel" id="btn-cancel-forgot">Cancelar</button>
-            </div>
-          </div>
-          <div id="forgot-step-2" style="display: none;">
-            <p class="auth-forgot-description">Insira o token recebido e defina a nova senha.</p>
-            <label class="auth-field" style="margin-top:8px;">
-              Token de Recuperação
-              <input type="text" id="recovery-token">
-            </label>
             <label class="auth-field" style="margin-top:8px;">
               Nova Senha
-              <input type="password" id="new-password">
+              <input type="password" id="new-password" required>
             </label>
             <div class="auth-forgot-actions" style="margin-top:10px;">
               <button type="button" class="auth-submit" id="btn-update-password" style="background: #21805d;">Atualizar Senha</button>
-              <button type="button" class="auth-forgot-cancel" id="btn-cancel-step2">Voltar</button>
+              <button type="button" class="auth-forgot-cancel" id="btn-cancel-forgot">Cancelar</button>
             </div>
           </div>
         </div>
-
+        
         <p class="auth-status" id="auth-status" data-state=""></p>
         <button type="button" class="auth-switch" id="auth-switch">Ainda não tem conta? Cadastre-se</button>
       </div>

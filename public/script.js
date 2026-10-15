@@ -24,14 +24,10 @@ const authForgotContainer = document.querySelector("#auth-forgot-container");
 const forgotContainer = document.querySelector("#forgot-container");
 const forgotEmail = document.querySelector("#forgot-email");
 const forgotTrigger = document.querySelector("#btn-forgot-trigger");
-const sendForgotButton = document.querySelector("#btn-send-forgot");
 const cancelForgotButton = document.querySelector("#btn-cancel-forgot");
-const cancelStep2Button = document.querySelector("#btn-cancel-step2");
 const updatePasswordButton = document.querySelector("#btn-update-password");
-const recoveryTokenInput = document.querySelector("#recovery-token");
 const newPasswordInput = document.querySelector("#new-password");
 const forgotStep1 = document.querySelector("#forgot-step-1");
-const forgotStep2 = document.querySelector("#forgot-step-2");
 const authConfirmationField = document.querySelector("#auth-confirmation-field");
 const authPasswordConfirmation = document.querySelector("#auth-password-confirmation");
 const passwordToggleButtons = document.querySelectorAll(".auth-password-toggle");
@@ -111,7 +107,6 @@ function setAuthMode(mode) {
   if (authForm) authForm.hidden = false;
   if (forgotContainer) forgotContainer.hidden = true;
   if (forgotStep1) forgotStep1.style.display = "block";
-  if (forgotStep2) forgotStep2.style.display = "none";
   if (authSwitchButton) authSwitchButton.hidden = false;
   if (authStatus) {
     authStatus.textContent = "";
@@ -148,7 +143,6 @@ if (forgotTrigger) {
     if (authSwitchButton) authSwitchButton.hidden = true;
     if (forgotContainer) forgotContainer.hidden = false;
     if (forgotStep1) forgotStep1.style.display = "block";
-    if (forgotStep2) forgotStep2.style.display = "none";
     if (authStatus) {
       authStatus.textContent = "";
       authStatus.dataset.state = "";
@@ -169,66 +163,14 @@ if (cancelForgotButton) {
   });
 }
 
-if (cancelStep2Button) {
-  cancelStep2Button.addEventListener("click", () => {
-    if (forgotContainer) forgotContainer.hidden = true;
-    if (authForm) authForm.hidden = false;
-    if (authSwitchButton) authSwitchButton.hidden = false;
-    if (authStatus) {
-      authStatus.textContent = "";
-      authStatus.dataset.state = "";
-    }
-  });
-}
-
-if (sendForgotButton) {
-  sendForgotButton.addEventListener("click", async () => {
-    if (forgotEmail && !forgotEmail.reportValidity()) return;
-
-    sendForgotButton.disabled = true;
-    if (authStatus) {
-      authStatus.textContent = "Solicitando instruções de recuperação…";
-      authStatus.dataset.state = "";
-    }
-
-    try {
-      const response = await fetch("/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail.value.trim() }),
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Não foi possível solicitar a recuperação da senha.");
-      }
-
-      if (authStatus) {
-        authStatus.textContent = result.message || "Instruções enviadas com sucesso.";
-        authStatus.dataset.state = "success";
-      }
-      
-      if (forgotStep1) forgotStep1.style.display = "none";
-      if (forgotStep2) forgotStep2.style.display = "block";
-    } catch (error) {
-      if (authStatus) {
-        authStatus.textContent = error instanceof Error ? error.message : "Não foi possível conectar ao servidor.";
-        authStatus.dataset.state = "error";
-      }
-    } finally {
-      sendForgotButton.disabled = false;
-    }
-  });
-}
-
 if (updatePasswordButton) {
   updatePasswordButton.addEventListener("click", async () => {
-    const token = recoveryTokenInput ? recoveryTokenInput.value.trim() : "";
+    const email = forgotEmail ? forgotEmail.value.trim() : "";
     const newPassword = newPasswordInput ? newPasswordInput.value : "";
 
-    if (!token || !newPassword) {
+    if (!email || !newPassword) {
       if (authStatus) {
-        authStatus.textContent = "Preencha o token e a nova senha.";
+        authStatus.textContent = "Preencha o e-mail e a nova senha.";
         authStatus.dataset.state = "error";
       }
       return;
@@ -241,12 +183,22 @@ if (updatePasswordButton) {
     }
 
     try {
+      // Dispara o pedido de recuperação / atualização direta
+      const responseForgot = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email }),
+      });
+      const resultForgot = await responseForgot.json();
+      if (!responseForgot.ok) {
+        throw new Error(resultForgot.error || "Não foi possível enviar as instruções.");
+      }
+
       const response = await fetch("/api/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: forgotEmail ? forgotEmail.value.trim() : "",
-          token: token,
+          email: email,
           password: newPassword,
         }),
       });
@@ -513,7 +465,6 @@ if (form) {
   });
 }
 
-// Integração com o Stripe Checkout
 const stripe = typeof Stripe !== 'undefined' ? Stripe('sua_chave_publica_stripe_aqui') : null;
 
 const subscribeBtn = document.getElementById('btn-subscribe-pro');
