@@ -2,6 +2,7 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const { Resend } = require('resend');
 const path = require('path');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(express.json());
@@ -78,6 +79,30 @@ app.post('/api/reset-password', async (req, res) => {
     if (error) throw error;
 
     res.json({ message: 'Senha atualizada com sucesso!' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// ETAPA 1: ROTA DE PAGAMENTO STRIPE
+// ==========================================
+app.post('/api/create-checkout-session', async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: process.env.STRIPE_PRICE_ID, // ID do preço criado no painel do Stripe
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: 'https://www.datacleanbr.com.br?success=true',
+      cancel_url: 'https://www.datacleanbr.com.br?canceled=true',
+    });
+
+    res.json({ id: session.id });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
