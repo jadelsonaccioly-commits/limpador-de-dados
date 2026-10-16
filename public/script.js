@@ -460,20 +460,4 @@ if (subscribeBtn) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      const session = await response.json();
-
-      if (session.error) {
-        alert(session.error);
-        return;
-      }
-
-      const result = await stripe.redirectToCheckout({ sessionId: session.id });
-      if (result.error) {
-        alert(result.error.message);
-      }
-    } catch (err) {
-      console.error('Erro ao iniciar o checkout:', err);
-      alert('Não foi possível iniciar o pagamento.');
-    }
-  });
-}
+      const session = await response
