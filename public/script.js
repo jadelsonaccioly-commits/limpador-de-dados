@@ -446,7 +446,7 @@ if (form) {
   });
 }
 
-const stripe = typeof Stripe !== 'undefined' ? Stripe('sua_chave_publica_stripe_aqui') : null;
+const stripe = typeof Stripe !== 'undefined' ? Stripe('pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC') : null;
 
 const subscribeBtn = document.getElementById('btn-subscribe-pro');
 if (subscribeBtn) {
