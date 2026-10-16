@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#f5f7fc">
     <title>Dados em ordem | Limpador de CSV</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%236159ed'/%3E%3Cstop offset='1' stop-color='%23806af8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Cpath d='M18 15h21l9 9v25H18z' fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M38 15v11h10M24 33h17M24 39h10m-10 7 4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    
+    <!-- Carregamento do SDK do Stripe no head -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <script>
       try {
         document.documentElement.dataset.theme =
@@ -15,7 +19,7 @@
       }
     </script>
     <style>
- /* Estilo limpo e padronizado do Modal de Autenticação */
+/* Estilo limpo e padronizado do Modal de Autenticação */
 dialog {
   padding: 25px;
   border: 1px solid var(--border);
@@ -518,7 +522,7 @@ dialog::backdrop {
         width: 30px;
         height: 30px;
         place-items: center;
-        border-radius: 9px;
+        border-radius: 99px;
         color: #6259db;
         background: #f0efff;
       }
@@ -802,6 +806,6 @@ dialog::backdrop {
       </div>
     </dialog>
 
-    <script src="https://js.stripe.com/v3/"></script>
+    <script src="js/script.js"></script>
   </body>
 </html>

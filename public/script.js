@@ -446,15 +446,21 @@ if (form) {
   });
 }
 
-const stripe = typeof Stripe !== 'undefined' ? Stripe('pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC') : null;
+// Inicialização segura do Stripe
+const stripeKey = 'pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC';
+const stripe = typeof Stripe !== 'undefined' ? Stripe(stripeKey) : null;
 
 const subscribeBtn = document.getElementById('btn-subscribe-pro');
 if (subscribeBtn) {
   subscribeBtn.addEventListener('click', async () => {
     if (!stripe) {
-      alert('Stripe não foi carregado corretamente.');
+      alert('O Stripe ainda está a carregar ou não pôde ser inicializado. Atualize a página e tente novamente.');
       return;
     }
+    
+    subscribeBtn.disabled = true;
+    subscribeBtn.textContent = 'A redirecionar...';
+
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -464,16 +470,22 @@ if (subscribeBtn) {
 
       if (session.error) {
         alert(session.error);
+        subscribeBtn.disabled = false;
+        subscribeBtn.textContent = 'Assinar Plano Pro';
         return;
       }
 
       const result = await stripe.redirectToCheckout({ sessionId: session.id });
       if (result.error) {
         alert(result.error.message);
+        subscribeBtn.disabled = false;
+        subscribeBtn.textContent = 'Assinar Plano Pro';
       }
     } catch (err) {
       console.error('Erro ao iniciar o checkout:', err);
       alert('Não foi possível iniciar o pagamento.');
+      subscribeBtn.disabled = false;
+      subscribeBtn.textContent = 'Assinar Plano Pro';
     }
   });
 }
