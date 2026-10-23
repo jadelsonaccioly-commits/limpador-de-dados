@@ -63,6 +63,11 @@ function limparEValidarEmail(email) {
 function validarECorrigirCpfCnpj(doc) {
   if (!doc) return { documentoFormatado: '', valido: false };
   let numeros = String(doc).replace(/\D/g, '');
+  
+  if (numeros.length === 0 || /^0+$/.test(numeros)) {
+    return { documentoFormatado: '', valido: false };
+  }
+
   if (numeros.length <= 11) {
     numeros = numeros.padStart(11, '0');
     if (numeros.length !== 11 || /^(\d)\1{10}$/.test(numeros)) return { documentoFormatado: numeros, valido: false };
@@ -208,7 +213,7 @@ app.post('/api/forgot-password', async (req, res) => {
 });
 
 // ==========================================
-// Rota de Limpeza Completa de Dados (12 Funcionalidades)
+// Rota de Limpeza Completa de Dados
 // ==========================================
 app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
   try {
@@ -221,9 +226,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
 
     const dadosProcessados = registros.map((linha) => {
       const emailOrig = linha.email || linha.E-mail || '';
-      const cpfCnpjGenerico = String(linha.cpf_cnpj || linha.CPF_CNPJ || linha['cpf/cnpj'] || linha['CPF/CNPJ'] || '');
-      const cpfOrig = linha.cpf || linha.CPF || (cpfCnpjGenerico.replace(/\D/g, '').length <= 11 ? cpfCnpjGenerico : '');
-      const cnpjOrig = linha.cnpj || linha.CNPJ || (cpfCnpjGenerico.replace(/\D/g, '').length > 11 ? cpfCnpjGenerico : '');
+      const docOrig = String(linha.cpf_cnpj || linha.CPF_CNPJ || linha['cpf/cnpj'] || linha['CPF/CNPJ'] || linha.cpf || linha.CPF || linha.cnpj || linha.CNPJ || '');
       const rgOrig = linha.rg || linha.RG || '';
       const telOrig = linha.telefone || linha.Telefone || '';
       const nomeOrig = linha.nome_razao_social || linha.nome || linha.Nome || '';
@@ -242,11 +245,10 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       else if (emailOrig.trim().toLowerCase() !== emailValido) totalCorrigidos++;
 
       // 2. CPF / CNPJ
-      const docCpf = validarECorrigirCpfCnpj(cpfOrig);
-      if (cpfOrig && !docCpf.valido) errosLinha.push('CPF inválido');
-      
-      const docCnpj = validarECorrigirCpfCnpj(cnpjOrig);
-      if (cnpjOrig && !docCnpj.valido) errosLinha.push('CNPJ inválido');
+      const docResultado = validarECorrigirCpfCnpj(docOrig);
+      if (!docResultado.valido) {
+        errosLinha.push('CPF/CNPJ pendente ou inválido');
+      }
 
       // 3. RG
       const rgLimpo = limparRG(rgOrig);
@@ -255,10 +257,10 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       const telNorm = limparENormalizarTelefone(telOrig);
       if (telOrig && !telNorm) errosLinha.push('Telefone inválido');
 
-      // 5. Razão Social / Nome
+      // 5. Nome
       const nomePadrao = padronizarNomeRazaoSocial(nomeOrig);
 
-      // 6. Logradouros
+      // 6. Logradouro
       const logrPadrao = padronizarLogradouro(logrOrig);
 
       // 7. Estado / UF
@@ -278,25 +280,37 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
 
       if (errosLinha.length > 0) totalAlertas++;
 
-      return {
-        ...linha,
-        nome: nomePadrao,
-        nome_razao_social: nomePadrao,
-        email: emailValido || emailOrig,
-        cpf_cnpj: docCpf.documentoFormatado || docCnpj.documentoFormatado || cpfOrig || cnpjOrig,
-        cpf: docCpf.documentoFormatado || cpfOrig,
-        cnpj: docCnpj.documentoFormatado || cnpjOrig,
-        rg: rgLimpo,
-        logradouro: logrPadrao,
-        estado: estadoUF,
-        cep: cepFormatado,
-        telefone: telNorm || telOrig,
-        moeda: moedaFormatada,
-        quantidade: numFormatado,
-        data_cadastro: dataFormatada,
-        status_geral: errosLinha.length === 0 ? 'OK' : 'REVISAR',
-        motivo_revisao: errosLinha.length > 0 ? errosLinha.join(' | ') : 'Nenhum'
-      };
+      // Monta objeto final preservando a estrutura da planilha de origem sem criar colunas duplicadas
+      let linhaSaida = { ...linha };
+
+      if ('nome' in linhaSaida) linhaSaida.nome = nomePadrao;
+      if ('nome_razao_social' in linhaSaida) linhaSaida.nome_razao_social = nomePadrao;
+      if (!('nome' in linhaSaida) && !('nome_razao_social' in linhaSaida)) linhaSaida.nome = nomePadrao;
+
+      if ('email' in linhaSaida) linhaSaida.email = emailValido || emailOrig;
+      if ('E-mail' in linhaSaida) linhaSaida['E-mail'] = emailValido || emailOrig;
+
+      // Atualiza o documento diretamente na coluna que veio do cliente
+      const docVal = docResultado.documentoFormatado || docOrig;
+      if ('cpf_cnpj' in linhaSaida) linhaSaida.cpf_cnpj = docVal;
+      else if ('CPF_CNPJ' in linhaSaida) linhaSaida.CPF_CNPJ = docVal;
+      else if ('cpf' in linhaSaida) linhaSaida.cpf = docVal;
+      else if ('cnpj' in linhaSaida) linhaSaida.cnpj = docVal;
+      else linhaSaida.cpf_cnpj = docVal;
+
+      if ('rg' in linhaSaida) linhaSaida.rg = rgLimpo;
+      if ('logradouro' in linhaSaida) linhaSaida.logradouro = logrPadrao;
+      if ('estado' in linhaSaida) linhaSaida.estado = estadoUF;
+      if ('cep' in linhaSaida) linhaSaida.cep = cepFormatado;
+      if ('telefone' in linhaSaida) linhaSaida.telefone = telNorm || telOrig;
+      if ('moeda' in linhaSaida) linhaSaida.moeda = moedaFormatada;
+      if ('quantidade' in linhaSaida) linhaSaida.quantidade = numFormatado;
+      if ('data_cadastro' in linhaSaida) linhaSaida.data_cadastro = dataFormatada;
+
+      linhaSaida.status_geral = errosLinha.length === 0 ? 'OK' : 'REVISAR';
+      linhaSaida.motivo_revisao = errosLinha.length > 0 ? errosLinha.join(' | ') : 'Nenhum';
+
+      return linhaSaida;
     });
 
     // 12. Remover Duplicados
@@ -304,8 +318,8 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
     const alertasDetalhes = dadosProcessados
       .filter(item => item.status_geral === 'REVISAR')
       .map(item => ({
-        nome: item.nome_razao_social || '',
-        emailOriginal: item.email || '',
+        nome: item.nome || item.nome_razao_social || '',
+        emailOriginal: item.email || item['E-mail'] || '',
         telefone: item.telefone || '',
         motivo: item.motivo_revisao
       }));
