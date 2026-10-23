@@ -392,8 +392,8 @@ function showReport(report) {
               class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition" title="Enviar apenas E-mail">
               ✉️ E-mail
             </button>
-            <button onclick="abrirWhatsAppIndividual('${safeNome}', '${safeTel}', '${safeMotivo}')" 
-              class="px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition" title="Abrir Chat no WhatsApp">
+            <button onclick="copiarTextoEAbirWhatsApp('${safeNome}', '${safeTel}', '${safeMotivo}', this)" 
+              class="px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition" title="Copiar mensagem e abrir WhatsApp">
               💬 WhatsApp
             </button>
           </div>
@@ -428,7 +428,6 @@ async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, b
   botao.disabled = true;
   botao.textContent = "A enviar...";
 
-  // Timeout de 5 segundos para não travar a interface
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -453,7 +452,6 @@ async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, b
       throw new Error(res.error || "Não foi possível enviar o e-mail.");
     }
 
-    // Marca como Enviado
     botao.textContent = "Enviado!";
     botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
     botao.classList.add("bg-gray-500");
@@ -471,8 +469,8 @@ async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, b
   }
 }
 
-// --- Abertura do WhatsApp (Apenas WhatsApp sob demanda) ---
-function abrirWhatsAppIndividual(encodedNome, encodedTel, encodedMotivo) {
+// --- Copia Mensagem para o Clipboard e Abre Chat Único no WhatsApp ---
+async function copiarTextoEAbirWhatsApp(encodedNome, encodedTel, encodedMotivo, botao) {
   const nome = decodeURIComponent(encodedNome);
   const telefone = decodeURIComponent(encodedTel);
   const motivoRevisao = decodeURIComponent(encodedMotivo);
@@ -483,9 +481,29 @@ function abrirWhatsAppIndividual(encodedNome, encodedTel, encodedMotivo) {
   }
 
   const telLimpo = telefone.replace(/\D/g, '');
-  const texto = `Olá ${nome || 'tudo bem?'}, identificamos uma divergência em seu cadastro (${motivoRevisao}). Poderia nos ajudar a atualizar?`;
-  const linkWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpo}&text=${encodeURIComponent(texto)}`;
-  
+  const textoMensagem = `Olá ${nome || 'tudo bem?'}, identificamos uma divergência em seu cadastro (${motivoRevisao}). Poderia nos ajudar a atualizar?`;
+
+  try {
+    // Copia o texto automaticamente para a área de transferência do computador
+    await navigator.clipboard.writeText(textoMensagem);
+    
+    // Feedback visual rápido no botão
+    const textoOriginal = botao.textContent;
+    botao.textContent = "Copiado! ✓";
+    botao.classList.remove("bg-green-600");
+    botao.classList.add("bg-gray-600");
+    setTimeout(() => {
+      botao.textContent = textoOriginal;
+      botao.classList.remove("bg-gray-600");
+      botao.classList.add("bg-green-600");
+    }, 2000);
+
+  } catch (err) {
+    console.warn("Não foi possível copiar automaticamente para o clipboard:", err);
+  }
+
+  // Abre apenas o chat limpo (sem poluir o navegador com várias abas de texto gigante)
+  const linkWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpo}`;
   window.open(linkWhatsApp, '_blank');
 }
 
