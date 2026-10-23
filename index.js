@@ -284,7 +284,6 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       const moedaOrig = linha.moeda || linha.Moeda || linha.valor || '';
       const numOrig = linha.quantidade || linha.num || '';
       
-      // Tratamento separado e seguro de Datas
       const dataCadOrig = linha.data_cadastro || linha.data || '';
       const dataNascOrig = linha.data_nascimento || linha.Data_Nascimento || linha.data_nasc || '';
 
@@ -336,7 +335,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       // 9. Numérico
       const numFormatado = formatarNumerico(numOrig);
 
-      // 10. Tratamento e Validação Cruzada de Datas
+      // 10. Datas
       const dataCadFormatada = padronizarData(dataCadOrig);
       const dataNascFormatada = padronizarData(dataNascOrig);
 
@@ -350,20 +349,18 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
         }
       }
 
-      // 11. Gênero / Sexo e Profissão
+      // 11. Gênero e Profissão
       const generoFormatado = padronizarGenero(generoOrig);
       const profissaoFormatada = padronizarProfissao(profOrig);
 
       if (errosLinha.length > 0) totalAlertas++;
 
-      // Monta objeto final com colunas estrategicamente organizadas
       let linhaSaida = { ...linha };
 
       if ('nome' in linhaSaida) linhaSaida.nome = nomePadrao;
       if ('nome_razao_social' in linhaSaida) linhaSaida.nome_razao_social = nomePadrao;
       if (!('nome' in linhaSaida) && !('nome_razao_social' in linhaSaida)) linhaSaida.nome = nomePadrao;
 
-      // Adiciona colunas extras para marketing e CRM
       const nomeFantasia = isPJ ? extrairNomeFantasia(nomePadrao) : nomePadrao;
       linhaSaida.nome_fantasia = nomeFantasia;
       linhaSaida.primeiro_nome = primeiroNome;
@@ -372,7 +369,6 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       if ('email' in linhaSaida) linhaSaida.email = emailValido || emailOrig;
       if ('E-mail' in linhaSaida) linhaSaida['E-mail'] = emailValido || emailOrig;
 
-      // Atualiza o documento na coluna original
       const docVal = docResultado.documentoFormatado || docOrig;
       if ('cpf_cnpj' in linhaSaida) linhaSaida.cpf_cnpj = docVal;
       else if ('CPF_CNPJ' in linhaSaida) linhaSaida.CPF_CNPJ = docVal;
@@ -400,7 +396,6 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       return linhaSaida;
     });
 
-    // 12. Deduplicação Inteligente Multi-Chave (E-mail OR CPF/CNPJ OR Telefone)
     const dadosFinais = removerDuplicadosInteligente(dadosProcessados);
     const alertasDetalhes = dadosProcessados
       .filter(item => item.status_geral === 'REVISAR')
@@ -419,7 +414,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
     const isExcelOriginal = extensaoOriginal === '.xlsx' || extensaoOriginal === '.xls';
     const bufferSaida = XLSX.write(novoWb, { type: 'buffer', bookType: isExcelOriginal ? 'xlsx' : 'csv' });
 
-    res.json({
+    return res.json({
       sucesso: true,
       totalRecebido: registros.length,
       totalProcessado: dadosFinais.length,
@@ -431,7 +426,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       contentType: isExcelOriginal ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv;charset=utf-8;'
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ sucesso: false, error: error.message });
   }
 });
 
@@ -459,22 +454,30 @@ app.post('/api/notificar-erro', async (req, res) => {
       linkWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpo}&text=${encodeURIComponent(`Olá ${nome || 'tudo bem?'}, identificamos uma divergência em seu cadastro (${motivoRevisao}).`)}`;
     }
 
-    res.json({ sucesso: true, emailEnviado, linkWhatsApp, mensagem: 'Notificação processada com sucesso!' });
+    return res.json({ sucesso: true, emailEnviado, linkWhatsApp, mensagem: 'Notificação processada com sucesso!' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ sucesso: false, error: error.message });
   }
 });
 
 app.post('/api/notificar-massa', async (req, res) => {
   try {
     const { alertasDetalhes } = req.body;
-    if (!alertasDetalhes || !Array.isArray(alertasDetalhes)) return res.status(400).json({ error: "Lista inválida." });
+    if (!alertasDetalhes || !Array.isArray(alertasDetalhes)) {
+      return res.status(400).json({ sucesso: false, error: "Lista inválida." });
+    }
 
     let enviadosComSucesso = 0;
     let falhas = 0;
 
-    for (const item of alertasDetalhes) {
-      if (!item.emailOriginal || item.emailOriginal.includes('inválido')) { falhas++; continue; }
+    // Limita o lote por execução para evitar timeout na Vercel
+    const listaParaEnviar = alertasDetalhes.slice(0, 50);
+
+    for (const item of listaParaEnviar) {
+      if (!item.emailOriginal || item.emailOriginal.includes('inválido') || !item.emailOriginal.includes('@')) { 
+        falhas++; 
+        continue; 
+      }
       try {
         await resend.emails.send({
           from: 'Dados em Ordem <onboarding@resend.dev>',
@@ -483,28 +486,33 @@ app.post('/api/notificar-massa', async (req, res) => {
           html: `<p>Olá ${item.nome || 'Cliente'}, identificamos a pendência: ${item.motivo}. Por favor regularize.</p>`
         });
         enviadosComSucesso++;
-      } catch (err) { falhas++; }
+      } catch (err) { 
+        falhas++; 
+      }
     }
 
-    res.json({ sucesso: true, mensagem: `Disparo concluído: ${enviadosComSucesso} enviados, ${falhas} falhas.` });
+    return res.json({ 
+      sucesso: true, 
+      mensagem: `Disparo concluído: ${enviadosComSucesso} enviados, ${falhas} falhas.` 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ sucesso: false, error: error.message });
   }
 });
 
 app.post('/api/create-checkout-session', async (req, res) => {
-  const { planType } = req.body;
-  let priceId = planType === 'business' ? 'price_1USIprLKYNLZDtjci5T3OPZt' : 'price_1USIoeLKYNLZDtjchvAULrXC';
   try {
+    const { planType } = req.body;
+    let priceId = planType === 'business' ? 'price_1USIprLKYNLZDtjci5T3OPZt' : 'price_1USIoeLKYNLZDtjchvAULrXC';
     const session = await stripe.checkout.sessions.create({
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: 'http://localhost:3001?success=true',
       cancel_url: 'http://localhost:3001?canceled=true',
     });
-    res.json({ id: session.id });
+    return res.json({ id: session.id });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(500).json({ sucesso: false, error: error.message });
   }
 });
 
