@@ -54,11 +54,9 @@ function ehPessoaJuridica(nome) {
   return termosPJ.some(termo => nomeLower.includes(termo));
 }
 
-
 function extrairNomeFantasia(nome) {
   if (!nome || typeof nome !== 'string') return '';
   let texto = nome.trim();
-  // Remove sufixos jurídicos e termos de razão social
   texto = texto.replace(/\b(&\s*)?(cia|ltda|s\/a|sa|me|epp|mei|eireli|holding|comercio|servicos|industria)\b.*/gi, '').trim();
   return texto || nome;
 }
@@ -275,7 +273,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
     let totalAlertas = 0;
 
     const dadosProcessados = registros.map((linha) => {
-      const emailOrig = linha.email || linha.E-mail || '';
+      const emailOrig = linha.email || linha['E-mail'] || '';
       const docOrig = String(linha.cpf_cnpj || linha.CPF_CNPJ || linha['cpf/cnpj'] || linha['CPF/CNPJ'] || linha.cpf || linha.CPF || linha.cnpj || linha.CNPJ || '');
       const rgOrig = linha.rg || linha.RG || '';
       const telOrig = linha.telefone || linha.Telefone || '';
@@ -285,7 +283,11 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       const cepOrig = linha.cep || linha.CEP || '';
       const moedaOrig = linha.moeda || linha.Moeda || linha.valor || '';
       const numOrig = linha.quantidade || linha.num || '';
-      const dataOrig = linha.data_cadastro || linha.data || linha.data_nascimento || '';
+      
+      // Tratamento separado e seguro de Datas
+      const dataCadOrig = linha.data_cadastro || linha.data || '';
+      const dataNascOrig = linha.data_nascimento || linha.Data_Nascimento || linha.data_nasc || '';
+
       const generoOrig = linha.genero || linha.sexo || linha.Genero || linha.Sexo || '';
       const profOrig = linha.profissao || linha.Profissao || linha.cargo || linha.Cargo || '';
 
@@ -334,8 +336,19 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       // 9. Numérico
       const numFormatado = formatarNumerico(numOrig);
 
-      // 10. Datas (Cadastro / Nascimento)
-      const dataFormatada = padronizarData(dataOrig);
+      // 10. Tratamento e Validação Cruzada de Datas
+      const dataCadFormatada = padronizarData(dataCadOrig);
+      const dataNascFormatada = padronizarData(dataNascOrig);
+
+      if (dataNascFormatada && dataCadFormatada && dataNascFormatada === dataCadFormatada) {
+        errosLinha.push('Data de nascimento igual à data de cadastro');
+      } else if (dataNascFormatada && dataCadFormatada) {
+        const dNasc = new Date(dataNascFormatada);
+        const dCad = new Date(dataCadFormatada);
+        if (dNasc >= dCad) {
+          errosLinha.push('Data de nascimento posterior ao cadastro');
+        }
+      }
 
       // 11. Gênero / Sexo e Profissão
       const generoFormatado = padronizarGenero(generoOrig);
@@ -374,8 +387,9 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       if ('telefone' in linhaSaida) linhaSaida.telefone = telNorm || telOrig;
       if ('moeda' in linhaSaida) linhaSaida.moeda = moedaFormatada;
       if ('quantidade' in linhaSaida) linhaSaida.quantidade = numFormatado;
-      if ('data_cadastro' in linhaSaida) linhaSaida.data_cadastro = dataFormatada;
-      if ('data_nascimento' in linhaSaida) linhaSaida.data_nascimento = dataFormatada;
+      
+      if ('data_cadastro' in linhaSaida) linhaSaida.data_cadastro = dataCadFormatada;
+      if (dataNascOrig || 'data_nascimento' in linhaSaida) linhaSaida.data_nascimento = dataNascFormatada;
 
       if (generoOrig) linhaSaida.genero = generoFormatado;
       if (profOrig) linhaSaida.profissao = profissaoFormatada;
