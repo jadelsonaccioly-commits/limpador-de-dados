@@ -54,6 +54,37 @@ function ehPessoaJuridica(nome) {
   return termosPJ.some(termo => nomeLower.includes(termo));
 }
 
+
+function extrairNomeFantasia(nome) {
+  if (!nome || typeof nome !== 'string') return '';
+  let texto = nome.trim();
+  // Remove sufixos jurídicos e termos de razão social
+  texto = texto.replace(/\b(&\s*)?(cia|ltda|s\/a|sa|me|epp|mei|eireli|holding|comercio|servicos|industria)\b.*/gi, '').trim();
+  return texto || nome;
+}
+
+function extrairPrimeiroNomeESobrenome(nome) {
+  if (!nome || typeof nome !== 'string') return { primeiroNome: '', sobrenome: '' };
+  const partes = nome.trim().split(/\s+/);
+  const primeiroNome = partes[0] || '';
+  const sobrenome = partes.slice(1).join(' ') || '';
+  return { primeiroNome, sobrenome };
+}
+
+function padronizarGenero(genero) {
+  if (!genero) return '';
+  const g = String(genero).trim().toLowerCase();
+  if (['m', 'masculino', 'homem', 'male'].includes(g)) return 'M';
+  if (['f', 'feminino', 'mulher', 'female'].includes(g)) return 'F';
+  if (['outro', 'outros', 'other', 'non-binary', 'nao-binario'].includes(g)) return 'Outro';
+  return String(genero).trim();
+}
+
+function padronizarProfissao(profissao) {
+  if (!profissao || typeof profissao !== 'string') return '';
+  return padronizarNomeRazaoSocial(profissao);
+}
+
 function limparEValidarEmail(email) {
   if (!email || typeof email !== 'string') return null;
   let emailLimpo = email.trim().toLowerCase().replace(/\s+/g, '');
@@ -174,12 +205,24 @@ function padronizarData(dataStr) {
   return dataStr;
 }
 
-function removerDuplicados(dados, chave = 'email') {
-  const vistos = new Set();
+function removerDuplicadosInteligente(dados) {
+  const vistosEmail = new Set();
+  const vistosDoc = new Set();
+  const vistosTel = new Set();
+
   return dados.filter(item => {
-    const val = item[chave];
-    if (!val || vistos.has(val)) return false;
-    vistos.add(val);
+    const emailVal = item.email ? String(item.email).trim().toLowerCase() : '';
+    const docVal = item.cpf_cnpj ? String(item.cpf_cnpj).replace(/\D/g, '') : '';
+    const telVal = item.telefone ? String(item.telefone).replace(/\D/g, '') : '';
+
+    if (emailVal && vistosEmail.has(emailVal)) return false;
+    if (docVal && docVal.length >= 11 && vistosDoc.has(docVal)) return false;
+    if (telVal && telVal.length >= 10 && vistosTel.has(telVal)) return false;
+
+    if (emailVal) vistosEmail.add(emailVal);
+    if (docVal && docVal.length >= 11) vistosDoc.add(docVal);
+    if (telVal && telVal.length >= 10) vistosTel.add(telVal);
+
     return true;
   });
 }
@@ -242,7 +285,9 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       const cepOrig = linha.cep || linha.CEP || '';
       const moedaOrig = linha.moeda || linha.Moeda || linha.valor || '';
       const numOrig = linha.quantidade || linha.num || '';
-      const dataOrig = linha.data_cadastro || linha.data || '';
+      const dataOrig = linha.data_cadastro || linha.data || linha.data_nascimento || '';
+      const generoOrig = linha.genero || linha.sexo || linha.Genero || linha.Sexo || '';
+      const profOrig = linha.profissao || linha.Profissao || linha.cargo || linha.Cargo || '';
 
       let errosLinha = [];
 
@@ -253,6 +298,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
 
       // 2. Validação Cruzada Nome vs CPF/CNPJ
       const nomePadrao = padronizarNomeRazaoSocial(nomeOrig);
+      const { primeiroNome, sobrenome } = extrairPrimeiroNomeESobrenome(nomePadrao);
       const isPJ = ehPessoaJuridica(nomePadrao);
       const docNumeros = docOrig.replace(/\D/g, '');
 
@@ -288,22 +334,32 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       // 9. Numérico
       const numFormatado = formatarNumerico(numOrig);
 
-      // 10. Datas
+      // 10. Datas (Cadastro / Nascimento)
       const dataFormatada = padronizarData(dataOrig);
+
+      // 11. Gênero / Sexo e Profissão
+      const generoFormatado = padronizarGenero(generoOrig);
+      const profissaoFormatada = padronizarProfissao(profOrig);
 
       if (errosLinha.length > 0) totalAlertas++;
 
-      // Monta objeto final preservando a estrutura da planilha de origem sem criar colunas duplicadas
+      // Monta objeto final com colunas estrategicamente organizadas
       let linhaSaida = { ...linha };
 
       if ('nome' in linhaSaida) linhaSaida.nome = nomePadrao;
       if ('nome_razao_social' in linhaSaida) linhaSaida.nome_razao_social = nomePadrao;
       if (!('nome' in linhaSaida) && !('nome_razao_social' in linhaSaida)) linhaSaida.nome = nomePadrao;
 
+      // Adiciona colunas extras para marketing e CRM
+      const nomeFantasia = isPJ ? extrairNomeFantasia(nomePadrao) : nomePadrao;
+      linhaSaida.nome_fantasia = nomeFantasia;
+      linhaSaida.primeiro_nome = primeiroNome;
+      linhaSaida.sobrenome = sobrenome;
+
       if ('email' in linhaSaida) linhaSaida.email = emailValido || emailOrig;
       if ('E-mail' in linhaSaida) linhaSaida['E-mail'] = emailValido || emailOrig;
 
-      // Atualiza o documento diretamente na coluna que veio do cliente
+      // Atualiza o documento na coluna original
       const docVal = docResultado.documentoFormatado || docOrig;
       if ('cpf_cnpj' in linhaSaida) linhaSaida.cpf_cnpj = docVal;
       else if ('CPF_CNPJ' in linhaSaida) linhaSaida.CPF_CNPJ = docVal;
@@ -319,6 +375,10 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       if ('moeda' in linhaSaida) linhaSaida.moeda = moedaFormatada;
       if ('quantidade' in linhaSaida) linhaSaida.quantidade = numFormatado;
       if ('data_cadastro' in linhaSaida) linhaSaida.data_cadastro = dataFormatada;
+      if ('data_nascimento' in linhaSaida) linhaSaida.data_nascimento = dataFormatada;
+
+      if (generoOrig) linhaSaida.genero = generoFormatado;
+      if (profOrig) linhaSaida.profissao = profissaoFormatada;
 
       linhaSaida.status_geral = errosLinha.length === 0 ? 'OK' : 'REVISAR';
       linhaSaida.motivo_revisao = errosLinha.length > 0 ? errosLinha.join(' | ') : 'Nenhum';
@@ -326,8 +386,8 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       return linhaSaida;
     });
 
-    // 12. Remover Duplicados
-    const dadosFinais = removerDuplicados(dadosProcessados, 'email');
+    // 12. Deduplicação Inteligente Multi-Chave (E-mail OR CPF/CNPJ OR Telefone)
+    const dadosFinais = removerDuplicadosInteligente(dadosProcessados);
     const alertasDetalhes = dadosProcessados
       .filter(item => item.status_geral === 'REVISAR')
       .map(item => ({
