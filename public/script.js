@@ -184,6 +184,12 @@ if (sendForgotButton) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email }),
       });
+      
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("O servidor retornou uma resposta inválida.");
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -249,6 +255,12 @@ if (authForm) {
           password: authForm.elements.password.value,
         }),
       });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Resposta inválida do servidor.");
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -402,6 +414,11 @@ async function notificarCliente(nome, emailOriginal, telefone, motivoRevisao, bo
       body: JSON.stringify({ nome, emailOriginal, telefone, motivoRevisao })
     });
 
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("O servidor respondeu com um erro temporário.");
+    }
+
     const res = await response.json();
 
     if (!response.ok) {
@@ -423,7 +440,7 @@ async function notificarCliente(nome, emailOriginal, telefone, motivoRevisao, bo
   }
 }
 
-// --- Disparo em Lote para Todos ---
+// --- Disparo em Lote para Todos (Protegido contra HTML e Timeout) ---
 async function dispararMassaEmLote(alertasDetalhes, botao) {
   if (!confirm(`Confirma o envio de e-mails de correção para os ${alertasDetalhes.length} contactos listados?`)) {
     return;
@@ -433,11 +450,19 @@ async function dispararMassaEmLote(alertasDetalhes, botao) {
   botao.textContent = "A enviar lote...";
 
   try {
+    // Processa uma fatia inicial de segurança (até 50) para evitar estouro de timeout na Vercel
+    const loteSeguro = alertasDetalhes.slice(0, 50);
+
     const response = await fetch("/api/notificar-massa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alertasDetalhes })
+      body: JSON.stringify({ alertasDetalhes: loteSeguro })
     });
+
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("O servidor demorou a responder ou excedeu o tempo limite. Tente novamente.");
+    }
 
     const res = await response.json();
 
@@ -445,7 +470,7 @@ async function dispararMassaEmLote(alertasDetalhes, botao) {
       throw new Error(res.error || "Erro no disparo em massa.");
     }
 
-    alert(res.mensagem);
+    alert(res.mensagem + (alertasDetalhes.length > 50 ? " (Lote de segurança de 50 itens processado)." : ""));
     botao.textContent = "Lote Enviado com Sucesso!";
     botao.classList.remove("bg-indigo-600", "hover:bg-indigo-700");
     botao.classList.add("bg-green-600");
@@ -529,6 +554,11 @@ if (form) {
         body: formData 
       });
 
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("O ficheiro enviado excedeu os limites de processamento do servidor.");
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -599,6 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planType }),
       });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Erro de comunicação com a Stripe.");
+      }
 
       const data = await response.json();
 
