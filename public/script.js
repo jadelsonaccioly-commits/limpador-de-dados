@@ -374,17 +374,30 @@ function showReport(report) {
 
       report.alertasDetalhes.forEach((item) => {
         const li = document.createElement("li");
-        li.className = "flex items-center justify-between p-2 mb-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs";
+        li.className = "flex items-center justify-between p-2 mb-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs gap-2";
+        
+        // Codificação segura para passar parâmetros via atributos HTML
+        const safeNome = encodeURIComponent(item.nome || '');
+        const safeEmail = encodeURIComponent(item.emailOriginal || '');
+        const safeTel = encodeURIComponent(item.telefone || '');
+        const safeMotivo = encodeURIComponent(item.motivo || '');
+
         li.innerHTML = `
-          <div>
+          <div style="flex: 1;">
             <strong class="block text-gray-900 dark:text-white">${item.nome || 'Sem Nome'}</strong>
             <span class="text-red-500">${item.motivo}</span><br>
             <span class="text-gray-500">${item.emailOriginal} | ${item.telefone}</span>
           </div>
-          <button onclick="notificarCliente('${item.nome}', '${item.emailOriginal}', '${item.telefone}', '${item.motivo}', this)" 
-            class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-            Notificar / Corrigir
-          </button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button onclick="enviarEmailIndividual('${safeNome}', '${safeEmail}', '${safeMotivo}', this)" 
+              class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition" title="Enviar apenas E-mail">
+              ✉️ E-mail
+            </button>
+            <button onclick="abrirWhatsAppIndividual('${safeNome}', '${safeTel}', '${safeMotivo}')" 
+              class="px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition" title="Abrir Chat no WhatsApp">
+              💬 WhatsApp
+            </button>
+          </div>
         `;
         validationList.append(li);
       });
@@ -402,16 +415,25 @@ function showReport(report) {
   }
 }
 
-// --- Notificação Individual ---
-async function notificarCliente(nome, emailOriginal, telefone, motivoRevisao, botao) {
+// --- Notificação Individual por E-mail (Apenas E-mail) ---
+async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, botao) {
+  const nome = decodeURIComponent(encodedNome);
+  const emailOriginal = decodeURIComponent(encodedEmail);
+  const motivoRevisao = decodeURIComponent(encodedMotivo);
+
+  if (!emailOriginal || !emailOriginal.includes('@')) {
+    alert("Este contacto não possui um e-mail válido.");
+    return;
+  }
+
   botao.disabled = true;
-  botao.textContent = "Enviando...";
+  botao.textContent = "A enviar...";
 
   try {
     const response = await fetch("/api/notificar-erro", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, emailOriginal, telefone, motivoRevisao })
+      body: JSON.stringify({ nome, emailOriginal, telefone: "", motivoRevisao })
     });
 
     const contentType = response.headers.get("content-type");
@@ -422,22 +444,37 @@ async function notificarCliente(nome, emailOriginal, telefone, motivoRevisao, bo
     const res = await response.json();
 
     if (!response.ok) {
-      throw new Error(res.error || "Erro ao enviar notificação.");
+      throw new Error(res.error || "Erro ao enviar e-mail.");
     }
 
     if (res.sucesso) {
-      if (res.linkWhatsApp) {
-        window.open(res.linkWhatsApp, '_blank');
-      }
       botao.textContent = "Enviado!";
       botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
-      botao.classList.add("bg-green-600");
+      botao.classList.add("bg-gray-500");
     }
   } catch (err) {
     alert("Erro: " + err.message);
     botao.disabled = false;
-    botao.textContent = "Tentar Novamente";
+    botao.textContent = "✉️ E-mail";
   }
+}
+
+// --- Abertura do WhatsApp (Apenas WhatsApp sob demanda) ---
+function abrirWhatsAppIndividual(encodedNome, encodedTel, encodedMotivo) {
+  const nome = decodeURIComponent(encodedNome);
+  const telefone = decodeURIComponent(encodedTel);
+  const motivoRevisao = decodeURIComponent(encodedMotivo);
+
+  if (!telefone) {
+    alert("Este contacto não possui número de telefone.");
+    return;
+  }
+
+  const telLimpo = telefone.replace(/\D/g, '');
+  const texto = `Olá ${nome || 'tudo bem?'}, identificamos uma divergência em seu cadastro (${motivoRevisao}). Poderia nos ajudar a atualizar?`;
+  const linkWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpo}&text=${encodeURIComponent(texto)}`;
+  
+  window.open(linkWhatsApp, '_blank');
 }
 
 // --- Disparo em Lote para Todos (Protegido contra HTML e Timeout) ---
@@ -450,7 +487,6 @@ async function dispararMassaEmLote(alertasDetalhes, botao) {
   botao.textContent = "A enviar lote...";
 
   try {
-    // Processa uma fatia inicial de segurança (até 50) para evitar estouro de timeout na Vercel
     const loteSeguro = alertasDetalhes.slice(0, 50);
 
     const response = await fetch("/api/notificar-massa", {
