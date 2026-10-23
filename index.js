@@ -221,7 +221,7 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
 
     const dadosProcessados = registros.map((linha) => {
       const emailOrig = linha.email || linha.E-mail || '';
-      const cpfCnpjGenerico = linha.cpf_cnpj || linha.CPF_CNPJ || linha['cpf/cnpj'] || linha['CPF/CNPJ'] || '';
+      const cpfCnpjGenerico = String(linha.cpf_cnpj || linha.CPF_CNPJ || linha['cpf/cnpj'] || linha['CPF/CNPJ'] || '');
       const cpfOrig = linha.cpf || linha.CPF || (cpfCnpjGenerico.replace(/\D/g, '').length <= 11 ? cpfCnpjGenerico : '');
       const cnpjOrig = linha.cnpj || linha.CNPJ || (cpfCnpjGenerico.replace(/\D/g, '').length > 11 ? cpfCnpjGenerico : '');
       const rgOrig = linha.rg || linha.RG || '';
