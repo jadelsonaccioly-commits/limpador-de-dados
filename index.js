@@ -47,6 +47,13 @@ const MAPEAMENTO_ESTADOS = {
   'sao paulo': 'SP', 'são paulo': 'SP', 'sergipe': 'SE', 'tocantins': 'TO'
 };
 
+function ehPessoaJuridica(nome) {
+  if (!nome || typeof nome !== 'string') return false;
+  const termosPJ = ['ltda', 's/a', 'sa', 'me', 'eireli', 'epp', 'mei', 'cia', '& cia', 'comercio', 'industria', 'servicos', 'holding', 'brasil'];
+  const nomeLower = nome.toLowerCase();
+  return termosPJ.some(termo => nomeLower.includes(termo));
+}
+
 function limparEValidarEmail(email) {
   if (!email || typeof email !== 'string') return null;
   let emailLimpo = email.trim().toLowerCase().replace(/\s+/g, '');
@@ -244,9 +251,18 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       if (!emailValido) errosLinha.push('E-mail inválido/descartável');
       else if (emailOrig.trim().toLowerCase() !== emailValido) totalCorrigidos++;
 
-      // 2. CPF / CNPJ
+      // 2. Validação Cruzada Nome vs CPF/CNPJ
+      const nomePadrao = padronizarNomeRazaoSocial(nomeOrig);
+      const isPJ = ehPessoaJuridica(nomePadrao);
+      const docNumeros = docOrig.replace(/\D/g, '');
+
       const docResultado = validarECorrigirCpfCnpj(docOrig);
-      if (!docResultado.valido) {
+
+      if (isPJ && docNumeros.length > 0 && docNumeros.length <= 11) {
+        errosLinha.push('Empresa (PJ) cadastrada com CPF (necessário CNPJ)');
+      } else if (!isPJ && docNumeros.length > 11) {
+        errosLinha.push('Pessoa Física cadastrada com CNPJ');
+      } else if (!docResultado.valido) {
         errosLinha.push('CPF/CNPJ pendente ou inválido');
       }
 
@@ -257,25 +273,22 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
       const telNorm = limparENormalizarTelefone(telOrig);
       if (telOrig && !telNorm) errosLinha.push('Telefone inválido');
 
-      // 5. Nome
-      const nomePadrao = padronizarNomeRazaoSocial(nomeOrig);
-
-      // 6. Logradouro
+      // 5. Logradouro
       const logrPadrao = padronizarLogradouro(logrOrig);
 
-      // 7. Estado / UF
+      // 6. Estado / UF
       const estadoUF = converterEstadoUF(estOrig);
 
-      // 8. CEP
+      // 7. CEP
       const cepFormatado = formatarCEP(cepOrig);
 
-      // 9. Moeda
+      // 8. Moeda
       const moedaFormatada = formatarMoeda(moedaOrig);
 
-      // 10. Numérico
+      // 9. Numérico
       const numFormatado = formatarNumerico(numOrig);
 
-      // 11. Datas
+      // 10. Datas
       const dataFormatada = padronizarData(dataOrig);
 
       if (errosLinha.length > 0) totalAlertas++;
