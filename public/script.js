@@ -376,7 +376,6 @@ function showReport(report) {
         const li = document.createElement("li");
         li.className = "flex items-center justify-between p-2 mb-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs gap-2";
         
-        // Codificação segura para passar parâmetros via atributos HTML
         const safeNome = encodeURIComponent(item.nome || '');
         const safeEmail = encodeURIComponent(item.emailOriginal || '');
         const safeTel = encodeURIComponent(item.telefone || '');
@@ -415,47 +414,60 @@ function showReport(report) {
   }
 }
 
-// --- Notificação Individual por E-mail (Apenas E-mail) ---
+// --- Notificação Individual por E-mail (Com Proteção de Timeout de 5s) ---
 async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, botao) {
   const nome = decodeURIComponent(encodedNome);
   const emailOriginal = decodeURIComponent(encodedEmail);
   const motivoRevisao = decodeURIComponent(encodedMotivo);
 
-  if (!emailOriginal || !emailOriginal.includes('@')) {
-    alert("Este contacto não possui um e-mail válido.");
+  if (!emailOriginal || !emailOriginal.includes('@') || emailOriginal.includes('mailinator')) {
+    alert("Este contacto possui um e-mail inválido ou descartável e não pode receber mensagens.");
     return;
   }
 
   botao.disabled = true;
   botao.textContent = "A enviar...";
 
+  // Timeout de 5 segundos para não travar a interface
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
     const response = await fetch("/api/notificar-erro", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, emailOriginal, telefone: "", motivoRevisao })
+      body: JSON.stringify({ nome, emailOriginal, telefone: "", motivoRevisao }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("O servidor respondeu com um erro temporário.");
+      throw new Error("Erro de resposta do servidor.");
     }
 
     const res = await response.json();
 
-    if (!response.ok) {
-      throw new Error(res.error || "Erro ao enviar e-mail.");
+    if (!response.ok || !res.sucesso) {
+      throw new Error(res.error || "Não foi possível enviar o e-mail.");
     }
 
-    if (res.sucesso) {
-      botao.textContent = "Enviado!";
-      botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
-      botao.classList.add("bg-gray-500");
-    }
+    // Marca como Enviado
+    botao.textContent = "Enviado!";
+    botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
+    botao.classList.add("bg-gray-500");
+
   } catch (err) {
-    alert("Erro: " + err.message);
+    clearTimeout(timeoutId);
     botao.disabled = false;
     botao.textContent = "✉️ E-mail";
+    
+    if (err.name === 'AbortError') {
+      alert("O envio demorou mais do que o esperado. O servidor pode ter processado em segundo plano.");
+    } else {
+      alert("Erro: " + err.message);
+    }
   }
 }
 
