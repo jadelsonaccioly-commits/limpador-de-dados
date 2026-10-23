@@ -738,18 +738,66 @@ dialog::backdrop {
         </section>
 
         <!-- Secção de Planos e Preços -->
-        <section id="pricing" class="pricing-section" style="padding: 40px 20px; text-align: center;">
-          <h2>Escolha o seu plano</h2>
-          <div class="pricing-card" style="max-width: 400px; margin: 20px auto; background: var(--surface); padding: 30px; border-radius: 10px; border: 1px solid var(--border);">
-            <h3>Plano Pro</h3>
-            <p class="price" style="font-size: 32px; font-weight: bold; color: #4f46e5;">R$ 29<span style="font-size: 14px;">/mês</span></p>
-            <ul style="text-align: left; margin: 20px 0; list-style: none; padding: 0; font-size: 13px;">
-              <li style="margin-bottom: 10px;">✓ Limpeza ilimitada de ficheiros</li>
-              <li style="margin-bottom: 10px;">✓ Formatador de CPF, CNPJ e CEP</li>
-              <li style="margin-bottom: 10px;">✓ Validador de E-mails e Telefones</li>
-              <li style="margin-bottom: 10px;">✓ Suporte prioritário</li>
-            </ul>
-            <button id="btn-subscribe-pro" class="btn-primary" style="background: #4f46e5; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;">Assinar Plano Pro</button>
+        <section id="pricing" class="pricing-section" style="padding: 60px 20px; text-align: center;">
+          <div style="max-width: 760px; margin: 0 auto 40px;">
+            <p class="eyebrow" style="justify-content: center;">Investimento inteligente</p>
+            <h2 style="font-size: 32px; font-weight: 760; letter-spacing: -.04em; margin: 10px 0;">Escolha o plano ideal para o seu volume</h2>
+            <p style="color: var(--text-secondary); font-size: 15px;">Evolua sua produtividade com ferramentas avançadas de limpeza e IA.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 980px; margin: 0 auto; text-align: left;">
+            
+            <!-- Plano Pro -->
+            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <span style="background: #f0efff; color: #6259db; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Mais Popular</span>
+                <h3 style="margin: 15px 0 5px; font-size: 20px;">Plano Pro</h3>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Para profissionais e gestores.</p>
+                <p style="font-size: 36px; font-weight: 800; color: #6259db; margin: 0 0 20px;">R$ 49,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">/mês</span></p>
+                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
+                  <li>✓ Até 15.000 linhas/mês</li>
+                  <li>✓ Padronização com IA</li>
+                  <li>✓ Remoção de duplicados</li>
+                  <li>✓ Suporte prioritário</li>
+                </ul>
+              </div>
+              <button id="btn-subscribe-pro" class="submit-button" type="button" style="margin-top: 0;">Assinar Plano Pro</button>
+            </div>
+
+            <!-- Plano Business -->
+            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <span style="background: #e6f9f0; color: #0d9448; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Empresas & Agências</span>
+                <h3 style="margin: 15px 0 5px; font-size: 20px;">Plano Business</h3>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Para alto volume e equipes.</p>
+                <p style="font-size: 36px; font-weight: 800; color: #0d9448; margin: 0 0 20px;">R$ 149,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">/mês</span></p>
+                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
+                  <li>✓ Até 75.000 linhas/mês</li>
+                  <li>✓ Processamento em lote</li>
+                  <li>✓ Relatórios detalhados</li>
+                  <li>✓ Suporte dedicado via WhatsApp</li>
+                </ul>
+              </div>
+              <button id="btn-subscribe-business" class="submit-button" type="button" style="margin-top: 0; background: linear-gradient(110deg, #0d9448, #10b981);">Assinar Business</button>
+            </div>
+
+            <!-- Pacote de Créditos Avulsos -->
+            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <span style="background: var(--surface-muted); color: var(--text-secondary); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Sem Mensalidade</span>
+                <h3 style="margin: 15px 0 5px; font-size: 20px;">Pacote Avulso</h3>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Ideal para demandas pontuais.</p>
+                <p style="font-size: 36px; font-weight: 800; color: var(--text-primary); margin: 0 0 20px;">R$ 29,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;"> (único)</span></p>
+                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
+                  <li>✓ 5.000 créditos de limpeza</li>
+                  <li>✓ Sem validade mensal</li>
+                  <li>✓ Acesso total aos validadores</li>
+                  <li>✓ Pagamento único</li>
+                </ul>
+              </div>
+              <button id="btn-buy-credits" class="submit-button" type="button" style="margin-top: 0; background: linear-gradient(110deg, #334155, #475569);">Comprar Créditos</button>
+            </div>
+
           </div>
         </section>
       </main>

@@ -31,6 +31,7 @@ const authPasswordConfirmation = document.querySelector("#auth-password-confirma
 const passwordToggleButtons = document.querySelectorAll(".auth-password-toggle");
 const authUserLabel = document.querySelector("#auth-user");
 const authLogoutButton = document.querySelector("#auth-logout");
+const browseButton = document.querySelector(".browse-button");
 
 const authStorageKeys = {
   token: "dados-em-ordem-access-token",
@@ -314,6 +315,7 @@ function setFile(file) {
   if (optionsPanel) optionsPanel.hidden = false;
 }
 
+// --- Exibição de Relatório e Mala Direta (Individual e Lote) ---
 function showReport(report) {
   const metricTotal = document.querySelector("#metric-total");
   const metricCorrected = document.querySelector("#metric-corrected");
@@ -325,30 +327,59 @@ function showReport(report) {
   if (metricAlerts) metricAlerts.textContent = report.alertCount;
   
   if (reportValidations) {
-    const emailSummary = report.options.validateEmails ? `E-mails válidos: ${report.validEmails}` : "E-mails não validados";
-    const cpfSummary = report.options.formatCpfs ? `CPFs válidos: ${report.validCpfs}` : "CPFs não formatados";
-    reportValidations.textContent = `${emailSummary} · ${cpfSummary}`;
+    reportValidations.textContent = `Processamento concluído com ${report.alertCount} alertas encontrados.`;
   }
 
   if (validationList) {
     validationList.replaceChildren();
+    
+    if (report.alertasDetalhes && report.alertasDetalhes.length > 0) {
+      // --- Botão de Mala Direta em Lote ---
+      const massaContainer = document.createElement("div");
+      massaContainer.className = "mb-4 p-3 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-center justify-between";
+      massaContainer.innerHTML = `
+        <div>
+          <span class="font-bold text-sm text-indigo-900 dark:text-indigo-200 block">Automação de Mala Direta</span>
+          <span class="text-xs text-indigo-700 dark:text-indigo-400">Foram encontrados ${report.alertasDetalhes.length} registos com pendências.</span>
+        </div>
+        <button id="btn-disparar-massa" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow">
+          Disparar para Todos (E-mail)
+        </button>
+      `;
+      validationList.append(massaContainer);
 
-    if (report.alerts.length === 0) {
-      const item = document.createElement("li");
-      item.className = "is-clean";
-      item.textContent = "Nenhuma inconsistência de formato foi encontrada.";
-      validationList.append(item);
+      setTimeout(() => {
+        const btnMassa = document.getElementById("btn-disparar-massa");
+        if (btnMassa) {
+          btnMassa.addEventListener("click", () => dispararMassaEmLote(report.alertasDetalhes, btnMassa));
+        }
+      }, 100);
+
+      const headerItem = document.createElement("div");
+      headerItem.className = "font-bold text-sm mb-2 text-gray-700 dark:text-gray-300";
+      headerItem.textContent = "Contatos para Correção (Mala Direta):";
+      validationList.append(headerItem);
+
+      report.alertasDetalhes.forEach((item) => {
+        const li = document.createElement("li");
+        li.className = "flex items-center justify-between p-2 mb-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs";
+        li.innerHTML = `
+          <div>
+            <strong class="block text-gray-900 dark:text-white">${item.nome || 'Sem Nome'}</strong>
+            <span class="text-red-500">${item.motivo}</span><br>
+            <span class="text-gray-500">${item.emailOriginal} | ${item.telefone}</span>
+          </div>
+          <button onclick="notificarCliente('${item.nome}', '${item.emailOriginal}', '${item.telefone}', '${item.motivo}', this)" 
+            class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Notificar / Corrigir
+          </button>
+        `;
+        validationList.append(li);
+      });
     } else {
-      for (const alert of report.alerts) {
-        const item = document.createElement("li");
-        item.textContent = `Linha ${alert.row} · ${alert.column}: ${alert.message}`;
-        validationList.append(item);
-      }
-    }
-    if (report.removedDuplicates) {
       const item = document.createElement("li");
-      item.className = "is-clean";
-      item.textContent = `${report.removedDuplicates} linha(s) duplicada(s) removida(s).`;
+      item.className = "is-clean text-green-600 font-medium";
+      item.textContent = "Nenhum dado incorreto encontrado! Todos os registos estão OK.";
       validationList.append(item);
     }
   }
@@ -357,6 +388,87 @@ function showReport(report) {
     reportCard.hidden = false;
     reportCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
+}
+
+// --- Notificação Individual ---
+async function notificarCliente(nome, emailOriginal, telefone, motivoRevisao, botao) {
+  botao.disabled = true;
+  botao.textContent = "Enviando...";
+
+  try {
+    const response = await fetch("/api/notificar-erro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, emailOriginal, telefone, motivoRevisao })
+    });
+
+    const res = await response.json();
+
+    if (!response.ok) {
+      throw new Error(res.error || "Erro ao enviar notificação.");
+    }
+
+    if (res.sucesso) {
+      if (res.linkWhatsApp) {
+        window.open(res.linkWhatsApp, '_blank');
+      }
+      botao.textContent = "Enviado!";
+      botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
+      botao.classList.add("bg-green-600");
+    }
+  } catch (err) {
+    alert("Erro: " + err.message);
+    botao.disabled = false;
+    botao.textContent = "Tentar Novamente";
+  }
+}
+
+// --- Disparo em Lote para Todos ---
+async function dispararMassaEmLote(alertasDetalhes, botao) {
+  if (!confirm(`Confirma o envio de e-mails de correção para os ${alertasDetalhes.length} contactos listados?`)) {
+    return;
+  }
+
+  botao.disabled = true;
+  botao.textContent = "A enviar lote...";
+
+  try {
+    const response = await fetch("/api/notificar-massa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alertasDetalhes })
+    });
+
+    const res = await response.json();
+
+    if (!response.ok) {
+      throw new Error(res.error || "Erro no disparo em massa.");
+    }
+
+    alert(res.mensagem);
+    botao.textContent = "Lote Enviado com Sucesso!";
+    botao.classList.remove("bg-indigo-600", "hover:bg-indigo-700");
+    botao.classList.add("bg-green-600");
+
+  } catch (err) {
+    alert("Erro: " + err.message);
+    botao.disabled = false;
+    botao.textContent = "Tentar Novamente";
+  }
+}
+
+// --- Interação de clique para abrir o explorador de ficheiros ---
+if (dropZone && fileInput) {
+  dropZone.addEventListener("click", () => {
+    fileInput.click();
+  });
+}
+
+if (browseButton && fileInput) {
+  browseButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    fileInput.click();
+  });
 }
 
 if (fileInput) {
@@ -386,6 +498,7 @@ if (dropZone) {
   });
 }
 
+// --- Processamento do Formulário via FormData ---
 if (form) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -404,37 +517,51 @@ if (form) {
 
     if (submitButton) submitButton.disabled = true;
     if (status) {
-      status.textContent = "Limpando seus dados…";
+      status.textContent = "Limpando seus dados com segurança…";
       status.dataset.state = "";
     }
 
     try {
       const formData = new FormData(form);
-      const response = await fetch("/upload", { method: "POST", body: formData });
+
+      const response = await fetch("/api/limpar-dados", { 
+        method: "POST", 
+        body: formData 
+      });
+
+      const result = await response.json();
 
       if (!response.ok) {
-        const result = await response.json();
         throw new Error(result.error || "Não foi possível processar o arquivo.");
       }
 
-      const result = await response.json();
-      const binary = atob(result.file.contentBase64);
-      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-      const blob = new Blob([bytes], { type: result.file.contentType });
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = result.file.name;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      
+      // --- Download do Arquivo Higienizado ---
+      if (result.arquivoBase64) {
+        const binary = atob(result.arquivoBase64);
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+        const blob = new Blob([bytes], { type: result.contentType });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = result.nomeArquivo;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+      }
+
       if (status) {
-        status.textContent = `Pronto! O arquivo ${result.file.name} foi baixado.`;
+        status.textContent = `Pronto! ${result.totalProcessado} registos limpos e descarregados com sucesso.`;
         status.dataset.state = "success";
       }
-      showReport(result.report);
+      
+      showReport({
+        totalRows: result.totalRecebido,
+        correctedValues: result.totalCorrigidos || 0,
+        alertCount: result.totalAlertas || 0,
+        alertasDetalhes: result.alertasDetalhes || []
+      });
+
     } catch (error) {
       if (status) {
         status.textContent = error.message;
@@ -446,46 +573,73 @@ if (form) {
   });
 }
 
-// Inicialização segura do Stripe
-const stripeKey = 'pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC';
-const stripe = typeof Stripe !== 'undefined' ? Stripe(stripeKey) : null;
+// --- Integração Stripe Checkout ---
+document.addEventListener('DOMContentLoaded', () => {
+  const stripeKey = 'pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC';
+  const stripe = typeof Stripe !== 'undefined' ? Stripe(stripeKey) : null;
 
-const subscribeBtn = document.getElementById('btn-subscribe-pro');
-if (subscribeBtn) {
-  subscribeBtn.addEventListener('click', async () => {
+  const btnPro = document.getElementById('btn-subscribe-pro');
+  const btnBusiness = document.getElementById('btn-subscribe-business');
+  const btnCredits = document.getElementById('btn-buy-credits');
+
+  async function handleCheckout(planType, buttonElement, defaultText) {
     if (!stripe) {
-      alert('O Stripe ainda está a carregar ou não pôde ser inicializado. Atualize a página e tente novamente.');
+      alert('O Stripe ainda está a carregar. Atualize a página e tente novamente.');
       return;
     }
-    
-    subscribeBtn.disabled = true;
-    subscribeBtn.textContent = 'A redirecionar...';
+
+    if (buttonElement) {
+      buttonElement.disabled = true;
+      buttonElement.textContent = 'A redirecionar...';
+    }
 
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planType }),
       });
-      const session = await response.json();
 
-      if (session.error) {
-        alert(session.error);
-        subscribeBtn.disabled = false;
-        subscribeBtn.textContent = 'Assinar Plano Pro';
+      const data = await response.json();
+
+      if (data.error) {
+        alert('Erro ao iniciar o pagamento: ' + data.error);
+        if (buttonElement) {
+          buttonElement.disabled = false;
+          buttonElement.textContent = defaultText;
+        }
         return;
       }
 
-      const result = await stripe.redirectToCheckout({ sessionId: session.id });
-      if (result.error) {
-        alert(result.error.message);
-        subscribeBtn.disabled = false;
-        subscribeBtn.textContent = 'Assinar Plano Pro';
+      if (data.id) {
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
+        if (error) {
+          alert(error.message);
+          if (buttonElement) {
+            buttonElement.disabled = false;
+            buttonElement.textContent = defaultText;
+          }
+        }
       }
     } catch (err) {
-      console.error('Erro ao iniciar o checkout:', err);
-      alert('Não foi possível iniciar o pagamento.');
-      subscribeBtn.disabled = false;
-      subscribeBtn.textContent = 'Assinar Plano Pro';
+      console.error('Erro na requisição de pagamento:', err);
+      alert('Ocorreu um erro de conexão ao processar o pagamento.');
+      if (buttonElement) {
+        buttonElement.disabled = false;
+        buttonElement.textContent = defaultText;
+      }
     }
-  });
-}
+  }
+
+  if (btnPro) {
+    btnPro.addEventListener('click', () => handleCheckout('pro', btnPro, 'Assinar Plano Pro'));
+  }
+
+  if (btnBusiness) {
+    btnBusiness.addEventListener('click', () => handleCheckout('business', btnBusiness, 'Assinar Business'));
+  }
+
+  if (btnCredits) {
+    btnCredits.addEventListener('click', () => handleCheckout('credits', btnCredits, 'Comprar Créditos'));
+  }
+});
