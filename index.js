@@ -279,8 +279,10 @@ app.post('/api/limpar-dados', upload.single('file'), (req, res) => {
 
       return {
         ...linha,
+        nome: nomePadrao,
         nome_razao_social: nomePadrao,
         email: emailValido || emailOrig,
+        cpf_cnpj: docCpf.documentoFormatado || docCnpj.documentoFormatado || cpfOrig || cnpjOrig,
         cpf: docCpf.documentoFormatado || cpfOrig,
         cnpj: docCnpj.documentoFormatado || cnpjOrig,
         rg: rgLimpo,
