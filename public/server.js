@@ -16,6 +16,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Inicializa o Resend com a chave segura da Vercel
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Remetente padrão: usa variável de ambiente se tiver domínio próprio, ou o padrão do Resend
+// IMPORTANTE: Se usar 'onboarding@resend.dev', o emailOriginal DEVE ser o mesmo da sua conta Resend.
+const EMAIL_REMETENTE = process.env.RESEND_FROM_EMAIL || 'Dados em Ordem <onboarding@resend.dev>';
+
 app.post('/api/register', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -47,8 +51,10 @@ app.post('/api/notificar-erro', async (req, res) => {
       return res.status(400).json({ error: 'E-mail inválido ou descartável.' });
     }
 
+    console.log(`A tentar enviar e-mail via Resend para: ${emailOriginal} usando remetente: ${EMAIL_REMETENTE}`);
+
     const data = await resend.emails.send({
-      from: 'Dados em Ordem <onboarding@resend.dev>',
+      from: EMAIL_REMETENTE,
       to: [emailOriginal],
       subject: 'Atenção: Necessária atualização de cadastro - Dados em Ordem',
       html: `
@@ -66,6 +72,8 @@ app.post('/api/notificar-erro', async (req, res) => {
         </div>
       `,
     });
+
+    console.log("Resposta de sucesso do Resend:", data);
 
     return res.status(200).json({
       sucesso: true,
@@ -96,14 +104,14 @@ app.post('/api/notificar-massa', async (req, res) => {
       if (emailDestino && emailDestino.includes('@') && !emailDestino.includes('mailinator')) {
         try {
           await resend.emails.send({
-            from: 'Dados em Ordem <onboarding@resend.dev>',
+            from: EMAIL_REMETENTE,
             to: [emailDestino],
             subject: 'Atenção: Necessária atualização de cadastro',
             html: `<p>Olá ${item.nome || 'Cliente'}, identificamos uma divergência em seu cadastro: <strong>${item.motivo}</strong>.</p>`
           });
           enviados++;
         } catch (e) {
-          console.error(`Falha ao enviar para ${emailDestino}:`, e.message);
+          console.error(`Falha ao enviar lote para ${emailDestino}:`, e.message);
         }
       }
     }
