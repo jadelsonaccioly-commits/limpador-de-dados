@@ -16,9 +16,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Inicializa o Resend com a chave segura da Vercel
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Remetente padrão: usa variável de ambiente se tiver domínio próprio, ou o padrão do Resend
-// IMPORTANTE: Se usar 'onboarding@resend.dev', o emailOriginal DEVE ser o mesmo da sua conta Resend.
-const EMAIL_REMETENTE = process.env.RESEND_FROM_EMAIL || 'Dados em Ordem <onboarding@resend.dev>';
+// Remetente oficial de produção com o domínio verificado datacleanbr.com.br
+const EMAIL_REMETENTE = process.env.RESEND_FROM_EMAIL || 'Dados em Ordem <contato@datacleanbr.com.br>';
 
 app.post('/api/register', async (req, res) => {
   const { email, password } = req.body;
