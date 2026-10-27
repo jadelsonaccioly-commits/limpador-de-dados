@@ -222,6 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('btn-notify-massa').addEventListener('click', async () => {
               const currentUserId = localStorage.getItem('user_id');
+              const currentUserEmail = localStorage.getItem('user_email');
               const btn = document.getElementById('btn-notify-massa');
               btn.disabled = true;
               btn.textContent = 'A enviar notificações em massa...';
@@ -229,7 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const resMassa = await fetch('/api/notificar-massa', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ alertasDetalhes: data.alertasDetalhes, userId: currentUserId })
+                  body: JSON.stringify({ 
+                    alertasDetalhes: data.alertasDetalhes, 
+                    userId: currentUserId,
+                    userEmail: currentUserEmail 
+                  })
                 });
                 const resMassaJson = await resMassa.json();
                 alert(resMassaJson.mensagem || 'Lote enviado!');
@@ -246,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
               const li = document.createElement('li');
               li.style.cssText = 'padding:12px; border:1px solid var(--border-soft); border-radius:10px; margin-bottom:8px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; background:var(--surface-muted); font-size:11px;';
               
-              // Garante a extração correta do número para o link do WhatsApp
               const telRaw = item.telefone || '';
               const telLimpo = telRaw.replace(/\D/g, '');
               const mensagemWp = encodeURIComponent(`Olá ${item.nome || 'Cliente'}, identificamos uma inconsistência no seu cadastro: "${item.motivo}". Poderia por favor atualizar?`);
@@ -270,6 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
               const btnSingle = li.querySelector('.btn-notify-single');
               btnSingle.addEventListener('click', async () => {
                 const currentUserId = localStorage.getItem('user_id');
+                const currentUserEmail = localStorage.getItem('user_email');
+                
                 btnSingle.disabled = true;
                 btnSingle.textContent = 'Enviando...';
                 try {
@@ -280,7 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
                       nome: item.nome,
                       emailOriginal: item.emailOriginal,
                       motivoRevisao: item.motivo,
-                      userId: currentUserId
+                      userId: currentUserId,
+                      userEmail: currentUserEmail // <--- Envia o e-mail logado para o servidor consultar o Supabase
                     })
                   });
                   const resSingleJson = await resSingle.json();
@@ -303,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (reportCard) reportCard.hidden = false;
 
-        // Criar link de download automático do ficheiro limpo
         const byteCharacters = atob(data.arquivoBase64);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
