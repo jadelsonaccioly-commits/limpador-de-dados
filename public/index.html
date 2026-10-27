@@ -114,7 +114,7 @@
       .brand-mark svg { width: 22px; height: 22px; }
 
       .privacy {
-        display: none; /* Oculto em mobile para poupar espaço, visível em desktop */
+        display: none;
         align-items: center;
         gap: 8px;
         color: var(--text-secondary);
@@ -237,7 +237,6 @@
         font-weight: 600;
       }
 
-      /* Módulos de Limpeza Responsivos */
       .options-panel {
         display: block;
         width: 100%;
@@ -255,16 +254,16 @@
 
       .module-grid {
         display: grid;
-        grid-template-columns: 1fr; /* 1 coluna por defeito (Telemóvel) */
+        grid-template-columns: 1fr;
         gap: 12px;
       }
 
       @media(min-width: 640px) {
-        .module-grid { grid-template-columns: repeat(2, 1fr); } /* 2 colunas em tablets */
+        .module-grid { grid-template-columns: repeat(2, 1fr); }
       }
 
       @media(min-width: 1024px) {
-        .module-grid { grid-template-columns: repeat(4, 1fr); } /* 4 colunas em desktop */
+        .module-grid { grid-template-columns: repeat(4, 1fr); }
       }
 
       .option-group {
@@ -315,7 +314,6 @@
         font-weight: 600;
       }
 
-      /* Cartão de Upload */
       .upload-card {
         width: 100%;
         padding: 20px;
@@ -405,7 +403,6 @@
 
       .status { margin-top: 10px; font-size: 11px; }
 
-      /* Relatório e Métricas */
       .report-card {
         padding: 20px;
         border: 1px solid var(--border);
@@ -432,7 +429,6 @@
       .metric-label { margin: 0; font-size: 10px; color: var(--text-secondary); }
       .metric-value { margin: 4px 0 0; font-size: 18px; font-weight: 750; color: #6259db; }
 
-      /* Secção de Preços Responsiva */
       .pricing-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -455,7 +451,6 @@
         text-align: left;
       }
 
-      /* Modal */
       dialog {
         padding: 20px;
         border: 1px solid var(--border);
@@ -645,6 +640,10 @@
         <p class="card-description" id="auth-description">Acesse com seu e-mail e senha.</p>
         
         <form class="auth-form" id="auth-form">
+          <label class="auth-field" id="company-field" hidden>
+            Nome da Sua Empresa / Marca
+            <input type="text" id="auth-company" name="companyName" placeholder="Ex: Minha Empresa / Imobiliária Silva">
+          </label>
           <label class="auth-field">E-mail<input type="email" name="email" required autocomplete="email"></label>
           <label class="auth-field">Senha<input type="password" id="auth-password" name="password" required></label>
           <button type="submit" class="submit-button" id="auth-submit">Entrar</button>
