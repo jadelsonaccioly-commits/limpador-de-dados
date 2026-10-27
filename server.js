@@ -388,7 +388,7 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL COM SUPORTE ROBUSTO AO PERFIL DO CLIENTE ---
+// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL (WHITE-LABEL REAL) ---
 app.post('/api/notificar-erro', async (req, res) => {
   try {
     const { nome, emailOriginal, motivoRevisao, userId } = req.body;
@@ -402,7 +402,6 @@ app.post('/api/notificar-erro', async (req, res) => {
     let emailReplyTo = 'contato@datacleanbr.com.br';
     let perfilCliente = null;
 
-    // 1. Tenta buscar pelo userId enviado
     if (userId) {
       const { data } = await supabase
         .from('profiles')
@@ -412,7 +411,6 @@ app.post('/api/notificar-erro', async (req, res) => {
       perfilCliente = data;
     }
 
-    // 2. Fallback de segurança: se não encontrou pelo ID, busca o primeiro perfil registado na base de dados
     if (!perfilCliente) {
       const { data: profilesList } = await supabase
         .from('profiles')
@@ -443,10 +441,9 @@ app.post('/api/notificar-erro', async (req, res) => {
           <blockquote style="background: #f3f4f6; padding: 12px; border-left: 4px solid #4f46e5; margin: 15px 0;">
             <strong>Motivo da revisão:</strong> ${motivoRevisao}
           </blockquote>
-          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco.</p>
-          <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">
-            Mensagem enviada por <strong>${nomeRemetente}</strong> através da plataforma de gestão de dados.<br>
-            Para responder a esta mensagem, utilize o contacto direto: <strong>${emailReplyTo}</strong>
+          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco respondendo diretamente a este e-mail (<strong>${emailReplyTo}</strong>).</p>
+          <p style="margin-top: 30px; font-size: 11px; color: #6b7280;">
+            Mensagem gerida e enviada com segurança por <strong>${nomeRemetente}</strong>.
           </p>
         </div>
       `,
@@ -454,7 +451,7 @@ app.post('/api/notificar-erro', async (req, res) => {
 
     return res.status(200).json({
       sucesso: true,
-      mensagem: `E-mail enviado com sucesso em nome de ${nomeRemetente} (Resposta para: ${emailReplyTo})`,
+      mensagem: `E-mail enviado com sucesso em nome de ${nomeRemetente} (Respostas direcionadas para: ${emailReplyTo})`,
       detalhesResend: data
     });
 
@@ -464,7 +461,7 @@ app.post('/api/notificar-erro', async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO EM MASSA COM SUPORTE ROBUSTO AO PERFIL DO CLIENTE ---
+// --- ROTA DE NOTIFICAÇÃO EM MASSA (WHITE-LABEL REAL) ---
 app.post('/api/notificar-massa', async (req, res) => {
   try {
     const { alertasDetalhes, userId } = req.body;
@@ -520,7 +517,7 @@ app.post('/api/notificar-massa', async (req, res) => {
                 <p>Olá <strong>${item.nome || 'Cliente'}</strong>,</p>
                 <p>Identificamos uma divergência no seu registo com <strong>${nomeRemetente}</strong>:</p>
                 <p style="background: #f3f4f6; padding: 10px; border-left: 3px solid #4f46e5;">${item.motivo}</p>
-                <p>Por favor, entre em contacto para regularizar.</p>
+                <p>Por favor, entre em contacto respondendo a este e-mail (<strong>${emailReplyTo}</strong>) para regularizar.</p>
               </div>
             `
           });
