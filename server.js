@@ -388,10 +388,10 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL (WHITE-LABEL REAL) ---
+// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL (WHITE-LABEL REAL - BUSCA POR EMAIL OU ID) ---
 app.post('/api/notificar-erro', async (req, res) => {
   try {
-    const { nome, emailOriginal, motivoRevisao, userId } = req.body;
+    const { nome, emailOriginal, motivoRevisao, userId, userEmail } = req.body;
 
     const resEmail = sanitizarEmail(emailOriginal);
     if (!resEmail.valido) {
@@ -402,15 +402,27 @@ app.post('/api/notificar-erro', async (req, res) => {
     let emailReplyTo = 'contato@datacleanbr.com.br';
     let perfilCliente = null;
 
-    if (userId) {
+    // 1. Procura primariamente pelo e-mail do utilizador logado no Supabase
+    if (userEmail) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('company_name, sender_name, email')
+        .eq('email', userEmail)
+        .single();
+      if (data) perfilCliente = data;
+    }
+
+    // 2. Se não encontrou por e-mail, tenta pelo userId
+    if (!perfilCliente && userId) {
       const { data } = await supabase
         .from('profiles')
         .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
-      perfilCliente = data;
+      if (data) perfilCliente = data;
     }
 
+    // 3. Fallback de segurança caso nenhum venha preenchido
     if (!perfilCliente) {
       const { data: profilesList } = await supabase
         .from('profiles')
@@ -441,7 +453,7 @@ app.post('/api/notificar-erro', async (req, res) => {
           <blockquote style="background: #f3f4f6; padding: 12px; border-left: 4px solid #4f46e5; margin: 15px 0;">
             <strong>Motivo da revisão:</strong> ${motivoRevisao}
           </blockquote>
-          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco respondendo diretamente a este e-mail (<strong>${emailReplyTo}</strong>).</p>
+          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco respondendo diretamente para <strong>${emailReplyTo}</strong>.</p>
           <p style="margin-top: 30px; font-size: 11px; color: #6b7280;">
             Mensagem gerida e enviada com segurança por <strong>${nomeRemetente}</strong>.
           </p>
@@ -461,10 +473,10 @@ app.post('/api/notificar-erro', async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO EM MASSA (WHITE-LABEL REAL) ---
+// --- ROTA DE NOTIFICAÇÃO EM MASSA (WHITE-LABEL REAL - BUSCA POR EMAIL OU ID) ---
 app.post('/api/notificar-massa', async (req, res) => {
   try {
-    const { alertasDetalhes, userId } = req.body;
+    const { alertasDetalhes, userId, userEmail } = req.body;
 
     if (!Array.isArray(alertasDetalhes) || alertasDetalhes.length === 0) {
       return res.status(400).json({ error: 'Nenhum contacto fornecido para o lote.' });
@@ -474,13 +486,22 @@ app.post('/api/notificar-massa', async (req, res) => {
     let emailReplyTo = 'contato@datacleanbr.com.br';
     let perfilCliente = null;
 
-    if (userId) {
+    if (userEmail) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('company_name, sender_name, email')
+        .eq('email', userEmail)
+        .single();
+      if (data) perfilCliente = data;
+    }
+
+    if (!perfilCliente && userId) {
       const { data } = await supabase
         .from('profiles')
         .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
-      perfilCliente = data;
+      if (data) perfilCliente = data;
     }
 
     if (!perfilCliente) {
