@@ -8,28 +8,191 @@ const path = require('path');
 
 const app = express();
 
-// Configuração do Multer para receber ficheiros em memória (sem gravar em disco)
+// Configuração do Multer para receber ficheiros em memória
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 } // Limite de 50MB
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
-// Aumento de limite de payload para suportar requisições
+// Limites de payload ampliados para suportar planilhas grandes
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Inicialização correta do Supabase via Variáveis de Ambiente
+// Inicialização do Supabase
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || '';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Inicialização segura do Resend e Stripe com variáveis de ambiente
+// Inicialização do Resend e Stripe
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
-// Remetente oficial de produção com o domínio verificado datacleanbr.com.br
+// Remetente oficial verificado em produção
 const EMAIL_REMETENTE = process.env.RESEND_FROM_EMAIL || 'Dados em Ordem <contato@datacleanbr.com.br>';
+
+// --- FUNÇÕES AUXILIARES DE VALIDAÇÃO E HIGIENIZAÇÃO ---
+
+// 1. Correção e Validação de E-mails
+function sanitizarEmail(emailStr) {
+  if (!emailStr) return { email: '', valido: false, motivo: 'E-mail em falta' };
+  let email = String(emailStr).trim().toLowerCase();
+
+  const partes = email.split('@');
+  if (partes.length !== 2 || !partes[0] || !partes[1]) {
+    return { email, valido: false, motivo: 'E-mail com sintaxe inválida' };
+  }
+  if (partes[0].includes('..')) {
+    return { email, valido: false, motivo: 'E-mail contém pontos duplicados (..)' };
+  }
+
+  const dominiosProibidos = ['mailinator.com', '10minutemail.com', 'guerrillamail.com', 'tempmail.com', 'throwawaymail.com'];
+  if (dominiosProibidos.some(dom => partes[1] === dom)) {
+    return { email, valido: false, motivo: 'E-mail descartável ou temporário bloqueado' };
+  }
+
+  let dominio = partes[1];
+  const correcaoDominios = {
+    'gmal.com': 'gmail.com',
+    'gamil.com': 'gmail.com',
+    'gmed.com': 'gmail.com',
+    'hotmai.com': 'hotmail.com',
+    'hotmial.com': 'hotmail.com',
+    'yaho.com': 'yahoo.com',
+    'yhoo.com': 'yahoo.com',
+    'outlok.com': 'outlook.com'
+  };
+  if (correcaoDominios[dominio]) {
+    dominio = correcaoDominios[dominio];
+    email = `${partes[0]}@${dominio}`;
+  }
+
+  return { email, valido: true, motivo: '' };
+}
+
+// 2. Validação Matemática de CPF
+function validarCPF(cpfStr) {
+  const nums = String(cpfStr).replace(/\D/g, '').padStart(11, '0');
+  if (nums.length !== 11 || /^(\d)\1{10}$/.test(nums)) return false;
+  
+  let soma = 0;
+  for (let i = 0; i < 9; i++) soma += parseInt(nums.charAt(i)) * (10 - i);
+  let resto = 11 - (soma % 11);
+  let digito1 = (resto === 10 || resto === 11) ? 0 : resto;
+  if (digito1 !== parseInt(nums.charAt(9))) return false;
+
+  soma = 0;
+  for (let i = 0; i < 10; i++) soma += parseInt(nums.charAt(i)) * (11 - i);
+  resto = 11 - (soma % 11);
+  let digito2 = (resto === 10 || resto === 11) ? 0 : resto;
+  return digito2 === parseInt(nums.charAt(10));
+}
+
+// Validação Matemática de CNPJ
+function validarCNPJ(cnpjStr) {
+  const nums = String(cnpjStr).replace(/\D/g, '').padStart(14, '0');
+  if (nums.length !== 14 || /^(\d)\1{13}$/.test(nums)) return false;
+
+  let tamanho = nums.length - 2;
+  let numeros = nums.substring(0, tamanho);
+  let digitos = nums.substring(tamanho);
+  let soma = 0;
+  let pos = tamanho - 7;
+  
+  for (let i = tamanho; i >= 1; i--) {
+    soma += numeros.charAt(tamanho - i) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  if (resultado !== parseInt(digitos.charAt(0))) return false;
+
+  tamanho = tamanho + 1;
+  numeros = nums.substring(0, tamanho);
+  soma = 0;
+  pos = tamanho - 7;
+  for (let i = tamanho; i >= 1; i--) {
+    soma += numeros.charAt(tamanho - i) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  return resultado === parseInt(digitos.charAt(1));
+}
+
+// 3. Normalização de Telefones (E.164 / +55 com 9º dígito)
+function normalizarTelefone(telStr) {
+  if (!telStr) return { telefone: '', valido: false };
+  let nums = String(telStr).replace(/\D/g, '');
+
+  if (nums.startsWith('5555') && nums.length > 12) {
+    nums = nums.slice(2);
+  }
+  if (nums.startsWith('55') && nums.length >= 12) {
+    nums = nums.slice(2);
+  }
+
+  if (nums.length === 10) {
+    const ddd = nums.slice(0, 2);
+    const resto = nums.slice(2);
+    if (/^[6-9]/.test(resto)) {
+      nums = `${ddd}9${resto}`;
+    }
+  }
+
+  if (nums.length >= 10) {
+    return { telefone: `+55${nums}`, valido: true };
+  }
+  return { telefone: telStr, valido: false };
+}
+
+// 4. Capitalização Inteligente (Title Case) e Remoção de Ruídos
+function sanitizarNome(nomeStr) {
+  if (!nomeStr) return '';
+  let limpo = String(nomeStr)
+    .replace(/(?:dr\.?|sr\.?|sra\.?|cpf:?|cnpj:?)/gi, '')
+    .replace(/[0-9]/g, '')
+    .trim();
+
+  const minúsculas = ['da', 'de', 'do', 'dos', 'das', 'e'];
+  const palavras = limpo.toLowerCase().split(/\s+/);
+  
+  const formatadas = palavras.map((palavra, index) => {
+    if (index > 0 && minúsculas.includes(palavra)) {
+      return palavra;
+    }
+    return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+  });
+
+  return formatadas.join(' ');
+}
+
+// 5. Formatação de CEP
+function formatarCEP(cepStr) {
+  const nums = String(cepStr || '').replace(/\D/g, '').padStart(8, '0');
+  if (nums.length === 8) {
+    return `${nums.slice(0, 5)}-${nums.slice(5)}`;
+  }
+  return cepStr;
+}
+
+// 6. Nome Fantasia (Simplificação de Razão Social B2B)
+function converterNomeFantasia(razaoSocial) {
+  if (!razaoSocial) return '';
+  let nome = String(razaoSocial)
+    .replace(/(?:s\.?a\.?|ltda\.?|me\.?|epp\.?|ltda|s\/a|e\.? i\.?)/gi, '')
+    .trim();
+  return sanitizarNome(nome);
+}
+
+// 7. Padronização de Género
+function padronizarGenero(val) {
+  if (!val) return '';
+  const v = String(val).trim().toLowerCase();
+  if (v.startsWith('m') || v === 'masc' || v === '1') return 'Masculino';
+  if (v.startsWith('f') || v === 'fem' || v === '2') return 'Feminino';
+  return 'Outro / Não Informado';
+}
+
+// --- ROTAS DA API ---
 
 app.post('/api/register', async (req, res) => {
   const { email, password } = req.body;
@@ -53,76 +216,137 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// --- ROTA DE LIMPEZA E PADRONIZAÇÃO DE PLANILHAS ---
+// --- ROTA DE LIMPEZA E PADRONIZAÇÃO DE PLANILHAS (COM TODAS AS REGRAS) ---
 app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhum ficheiro foi enviado.' });
     }
 
-    // Lê o ficheiro Excel/CSV recebido em memória
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     
-    // Converte a folha para JSON (linhas da tabela)
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
     let totalCorrigidos = 0;
     let totalAlertas = 0;
     const alertasDetalhes = [];
 
-    // Lógica básica de higienização de colunas comuns (Nome, E-mail, Telefone, CPF)
     const rowsTratadas = rows.map((row, index) => {
-      let linhaModificada = false;
       let motivoAlerta = '';
-
-      // Tenta detetar campos de nome, e-mail e telefone de forma inteligente
       const keys = Object.keys(row);
       
+      let nomeVal = '';
+      let emailVal = '';
+      let telVal = '';
+      let dataNascVal = '';
+      let dataCadVal = '';
+
       keys.forEach(key => {
         const lowerKey = key.toLowerCase();
         let val = String(row[key] || '').trim();
 
-        // Padronização de Nomes (Capitalização básica)
-        if (lowerKey.includes('nome') && val) {
-          const nomeFormatado = val.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-          if (nomeFormatado !== val) {
-            row[key] = nomeFormatado;
+        // Nomes Próprios
+        if (lowerKey.includes('nome') && !lowerKey.includes('fantasia') && !lowerKey.includes('empresa') && !lowerKey.includes('razao')) {
+          const nomeTratado = sanitizarNome(val);
+          if (nomeTratado !== val) {
+            row[key] = nomeTratado;
             totalCorrigidos++;
-            linhaModificada = true;
+          }
+          nomeVal = nomeTratado;
+        }
+
+        // Nome Fantasia / Razão Social B2B
+        if (lowerKey.includes('fantasia') || lowerKey.includes('empresa') || lowerKey.includes('razao')) {
+          const fantasia = converterNomeFantasia(val);
+          if (fantasia && fantasia !== val) {
+            row[key] = fantasia;
+            totalCorrigidos++;
           }
         }
 
-        // Validação e correção de E-mails
-        if ((lowerKey.includes('email') || lowerKey.includes('e-mail')) && val) {
-          val = val.toLowerCase();
-          if (!val.includes('@') || val.includes('mailinator')) {
-            totalAlertas++;
-            motivoAlerta = 'E-mail inválido ou descartável';
+        // E-mails
+        if (lowerKey.includes('email') || lowerKey.includes('e-mail')) {
+          const resEmail = sanitizarEmail(val);
+          row[key] = resEmail.email;
+          emailVal = resEmail.email;
+          if (!resEmail.valido) {
+            motivoAlerta = resEmail.motivo;
           }
-          row[key] = val;
         }
 
-        // Formatação de Telefones / WhatsApp (+55)
-        if ((lowerKey.includes('tel') || lowerKey.includes('cel') || lowerKey.includes('whatsapp')) && val) {
-          const nums = val.replace(/\D/g, '');
-          if (nums.length >= 10) {
-            const formatado = `+55 (${nums.slice(0, 2)}) ${nums.slice(2, 7)}-${nums.slice(7, 11)}`;
-            if (formatado !== val) {
-              row[key] = formatado;
-              totalCorrigidos++;
+        // Telefones
+        if (lowerKey.includes('tel') || lowerKey.includes('cel') || lowerKey.includes('whatsapp')) {
+          const resTel = normalizarTelefone(val);
+          row[key] = resTel.telefone;
+          telVal = resTel.telefone;
+          if (!resTel.valido) {
+            if (!motivoAlerta) motivoAlerta = 'Telefone inválido ou incompleto';
+          } else {
+            totalCorrigidos++;
+          }
+        }
+
+        // CPF / CNPJ
+        if (lowerKey.includes('cpf') || lowerKey.includes('cnpj')) {
+          const limpo = val.replace(/\D/g, '');
+          if (limpo.length > 0 && limpo.length <= 11) {
+            const cpfFormatado = limpo.padStart(11, '0');
+            row[key] = cpfFormatado;
+            if (!validarCPF(cpfFormatado)) {
+              motivoAlerta = 'CPF matematicamente inválido ou sequência repetida';
             }
+          } else if (limpo.length > 11) {
+            const cnpjFormatado = limpo.padStart(14, '0');
+            row[key] = cnpjFormatado;
+            if (!validarCNPJ(cnpjFormatado)) {
+              motivoAlerta = 'CNPJ matematicamente inválido';
+            }
+          } else {
+            if (!motivoAlerta) motivoAlerta = 'Documento CPF/CNPJ em falta';
           }
+        }
+
+        // CEP
+        if (lowerKey.includes('cep')) {
+          const cepF = formatarCEP(val);
+          if (cepF !== val) {
+            row[key] = cepF;
+            totalCorrigidos++;
+          }
+        }
+
+        // Género / Sexo
+        if (lowerKey.includes('genero') || lowerKey.includes('sexo')) {
+          const genF = padronizarGenero(val);
+          if (genF && genF !== val) {
+            row[key] = genF;
+            totalCorrigidos++;
+          }
+        }
+
+        // Datas (Nascimento vs Cadastro)
+        if (lowerKey.includes('nasc') || lowerKey.includes('nascimento')) {
+          dataNascVal = val;
+        }
+        if (lowerKey.includes('cadastro') || lowerKey.includes('criacao') || lowerKey.includes('registro')) {
+          dataCadVal = val;
         }
       });
 
+      // Validação: Data de nascimento não pode ser igual à data de cadastro
+      if (dataNascVal && dataCadVal && dataNascVal === dataCadVal) {
+        motivoAlerta = 'Data de nascimento igual à data de cadastro';
+      }
+
       if (motivoAlerta) {
+        totalAlertas++;
         alertasDetalhes.push({
           linha: index + 2,
-          nome: row['Nome'] || row['nome'] || 'Registo ' + (index + 1),
-          emailOriginal: row['Email'] || row['email'] || row['E-mail'] || '',
-          telefone: row['Telefone'] || row['telefone'] || row['Celular'] || '',
+          nome: nomeVal || 'Registo ' + (index + 1),
+          emailOriginal: emailVal,
+          telefone: telVal,
           motivo: motivoAlerta
         });
       }
@@ -130,12 +354,10 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
       return row;
     });
 
-    // Cria uma nova folha e workbook com os dados limpos
     const novaFolha = XLSX.utils.json_to_sheet(rowsTratadas);
     const novoWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(novoWorkbook, novaFolha, 'Dados Limpos');
 
-    // Escreve o ficheiro em formato binário (Buffer) para enviar em Base64
     const bufferOut = XLSX.write(novoWorkbook, { type: 'buffer', bookType: 'xlsx' });
     const arquivoBase64 = bufferOut.toString('base64');
 
@@ -165,13 +387,14 @@ app.post('/api/notificar-erro', async (req, res) => {
   try {
     const { nome, emailOriginal, motivoRevisao } = req.body;
 
-    if (!emailOriginal || !emailOriginal.includes('@') || emailOriginal.includes('mailinator')) {
-      return res.status(400).json({ error: 'E-mail inválido ou descartável.' });
+    const resEmail = sanitizarEmail(emailOriginal);
+    if (!resEmail.valido) {
+      return res.status(400).json({ error: 'E-mail inválido ou descartável para envio.' });
     }
 
     const data = await resend.emails.send({
       from: EMAIL_REMETENTE,
-      to: [emailOriginal],
+      to: [resEmail.email],
       subject: 'Atenção: Necessária atualização de cadastro - Dados em Ordem',
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
@@ -214,18 +437,18 @@ app.post('/api/notificar-massa', async (req, res) => {
     let enviados = 0;
 
     for (const item of lote) {
-      const emailDestino = item.emailOriginal;
-      if (emailDestino && emailDestino.includes('@') && !emailDestino.includes('mailinator')) {
+      const resEmail = sanitizarEmail(item.emailOriginal);
+      if (resEmail.valido) {
         try {
           await resend.emails.send({
             from: EMAIL_REMETENTE,
-            to: [emailDestino],
+            to: [resEmail.email],
             subject: 'Atenção: Necessária atualização de cadastro',
             html: `<p>Olá ${item.nome || 'Cliente'}, identificamos uma divergência em seu cadastro: <strong>${item.motivo}</strong>.</p>`
           });
           enviados++;
         } catch (e) {
-          console.error(`Falha ao enviar lote para ${emailDestino}:`, e.message);
+          console.error(`Falha ao enviar lote para ${resEmail.email}:`, e.message);
         }
       }
     }
@@ -270,8 +493,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
-// Porta para desenvolvimento local
+// Porta para ambiente local
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Servidor limpo a correr em http://localhost:${PORT}`);
+  console.log(`Servidor a correr em http://localhost:${PORT}`);
 });
