@@ -205,17 +205,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('metric-corrected').textContent = data.totalCorrigidos;
         document.getElementById('metric-alerts').textContent = data.totalAlertas;
         
-        // Renderizar lista de alertas e botões de notificação
+        // Renderizar lista de alertas com opções garantidas de E-mail e WhatsApp
         if (validationList) {
           validationList.innerHTML = '';
           if (data.alertasDetalhes && data.alertasDetalhes.length > 0) {
             
-            // Botão de notificação em massa no topo da lista
+            // Botão de notificação em massa por e-mail no topo
             const massaContainer = document.createElement('li');
             massaContainer.style.marginBottom = '12px';
             massaContainer.innerHTML = `
               <button id="btn-notify-massa" class="submit-button" type="button" style="margin-top:0; background:#4f46e5;">
-                ✉️ Notificar Todos os Alertas em Massa (${data.alertasDetalhes.length})
+                ✉️ Notificar Todos os Alertas por E-mail (${data.alertasDetalhes.length})
               </button>
             `;
             validationList.appendChild(massaContainer);
@@ -237,22 +237,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Erro no envio em massa: ' + errMassa.message);
               } finally {
                 btn.disabled = false;
-                btn.textContent = `✉️ Notificar Todos os Alertas em Massa (${data.alertasDetalhes.length})`;
+                btn.textContent = `✉️ Notificar Todos os Alertas por E-mail (${data.alertasDetalhes.length})`;
               }
             });
 
-            // Linha a linha dos alertas
+            // Linha a linha dos alertas com os botões de E-mail e WhatsApp visíveis
             data.alertasDetalhes.forEach(item => {
               const li = document.createElement('li');
-              li.style.cssText = 'padding:10px; border:1px solid var(--border-soft); border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; background:var(--surface-muted); font-size:11px;';
+              li.style.cssText = 'padding:12px; border:1px solid var(--border-soft); border-radius:10px; margin-bottom:8px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; background:var(--surface-muted); font-size:11px;';
+              
+              // Garante a extração correta do número para o link do WhatsApp
+              const telRaw = item.telefone || '';
+              const telLimpo = telRaw.replace(/\D/g, '');
+              const mensagemWp = encodeURIComponent(`Olá ${item.nome || 'Cliente'}, identificamos uma inconsistência no seu cadastro: "${item.motivo}". Poderia por favor atualizar?`);
+              const linkWp = telLimpo.length >= 10 ? `https://wa.me/${telLimpo.startsWith('55') ? telLimpo : '55' + telLimpo}?text=${mensagemWp}` : `https://wa.me/?text=${mensagemWp}`;
+
               li.innerHTML = `
-                <div>
-                  <strong>Linha ${item.linha}: ${item.nome}</strong> (${item.emailOriginal || 'Sem email'})<br>
+                <div style="flex: 1; min-width: 200px;">
+                  <strong>Linha ${item.linha}: ${item.nome}</strong> (${item.emailOriginal || 'Sem email'} | Tel: ${telRaw || 'Não informado'})<br>
                   <span style="color:#e11d48;">Motivo: ${item.motivo}</span>
                 </div>
-                <button type="button" class="btn-notify-single" style="padding:4px 10px; border:1px solid #4f46e5; border-radius:6px; background:#f4f3ff; color:#4f46e5; cursor:pointer; font-size:10px; font-weight:700;">
-                  Notificar
-                </button>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <button type="button" class="btn-notify-single" style="padding:6px 12px; border:1px solid #4f46e5; border-radius:6px; background:#f4f3ff; color:#4f46e5; cursor:pointer; font-size:11px; font-weight:700;">
+                    ✉️ E-mail
+                  </button>
+                  <a href="${linkWp}" target="_blank" style="padding:6px 12px; border:1px solid #10b981; border-radius:6px; background:#e6f9f0; color:#0d9448; text-decoration:none; font-size:11px; font-weight:700; display:inline-flex; align-items:center;">
+                    💬 WhatsApp
+                  </a>
+                </div>
               `;
 
               const btnSingle = li.querySelector('.btn-notify-single');
@@ -280,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (errSingle) {
                   alert('Erro: ' + errSingle.message);
                   btnSingle.disabled = false;
-                  btnSingle.textContent = 'Notificar';
+                  btnSingle.textContent = '✉️ E-mail';
                 }
               });
 
