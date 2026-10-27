@@ -1,730 +1,346 @@
-const form = document.querySelector("#upload-form");
-const fileInput = document.querySelector("#file-input");
-const fileName = document.querySelector("#file-name");
-const dropZone = document.querySelector("#drop-zone");
-const submitButton = document.querySelector("#submit-button");
-const status = document.querySelector("#status");
-const reportCard = document.querySelector("#report-card");
-const validationList = document.querySelector("#validation-list");
-const optionsPanel = document.querySelector("#options-panel");
-const themeToggle = document.querySelector("#theme-toggle");
-const themeLabel = document.querySelector("#theme-label");
-const themeColor = document.querySelector('meta[name="theme-color"]');
-const authDialog = document.querySelector("#auth-dialog");
-const authOpenButton = document.querySelector("#auth-open");
-const authCloseButton = document.querySelector("#auth-close");
-const authForm = document.querySelector("#auth-form");
-const authTitle = document.querySelector("#auth-title");
-const authDescription = document.querySelector("#auth-description");
-const authSubmitButton = document.querySelector("#auth-submit");
-const authSwitchButton = document.querySelector("#auth-switch");
-const authStatus = document.querySelector("#auth-status");
-const authPassword = document.querySelector("#auth-password");
-const authForgotContainer = document.querySelector("#auth-forgot-container");
-const forgotContainer = document.querySelector("#forgot-container");
-const forgotEmail = document.querySelector("#forgot-email");
-const forgotTrigger = document.querySelector("#btn-forgot-trigger");
-const sendForgotButton = document.querySelector("#btn-send-forgot");
-const cancelForgotButton = document.querySelector("#btn-cancel-forgot");
-const authConfirmationField = document.querySelector("#auth-confirmation-field");
-const authPasswordConfirmation = document.querySelector("#auth-password-confirmation");
-const passwordToggleButtons = document.querySelectorAll(".auth-password-toggle");
-const authUserLabel = document.querySelector("#auth-user");
-const authLogoutButton = document.querySelector("#auth-logout");
-const browseButton = document.querySelector(".browse-button");
-
-const authStorageKeys = {
-  token: "dados-em-ordem-access-token",
-  email: "dados-em-ordem-user-email",
-};
-let authenticatedUser = {
-  accessToken: localStorage.getItem(authStorageKeys.token),
-  email: localStorage.getItem(authStorageKeys.email),
-};
-let authMode = "login";
-const savedTheme = localStorage.getItem("dados-em-ordem-theme");
-const initialTheme = savedTheme === "dark" || savedTheme === "light" ? savedTheme : "dark";
-
-function setTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  const darkMode = theme === "dark";
-  if (themeLabel) themeLabel.textContent = darkMode ? "Modo claro" : "Modo escuro";
-  if (themeToggle) {
-    themeToggle.setAttribute("aria-label", darkMode ? "Ativar modo claro" : "Ativar modo escuro");
-    themeToggle.title = darkMode ? "Ativar modo claro" : "Ativar modo escuro";
-  }
-  if (themeColor) themeColor.content = darkMode ? "#0d1220" : "#f5f7fc";
-}
-
-setTheme(initialTheme);
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    setTheme(theme);
-    localStorage.setItem("dados-em-ordem-theme", theme);
-  });
-}
-
-function updateAuthHeader() {
-  const isAuthenticated = Boolean(authenticatedUser.accessToken && authenticatedUser.email);
-  if (authOpenButton) authOpenButton.hidden = isAuthenticated;
-  if (authUserLabel) authUserLabel.hidden = !isAuthenticated;
-  if (authLogoutButton) authLogoutButton.hidden = !isAuthenticated;
-  if (authUserLabel) authUserLabel.textContent = isAuthenticated ? authenticatedUser.email : "";
-}
-
-function isAuthenticated() {
-  return Boolean(authenticatedUser.accessToken && authenticatedUser.email);
-}
-
-function promptLogin(message) {
-  setAuthMode("login");
-  if (authStatus) authStatus.textContent = message;
-  if (authDialog) authDialog.showModal();
-}
-
-updateAuthHeader();
-
-function setAuthMode(mode) {
-  authMode = mode;
-  const registering = mode === "register";
-  if (authTitle) authTitle.textContent = registering ? "Criar sua conta" : "Entrar na sua conta";
-  if (authDescription) authDescription.textContent = registering
-    ? "Cadastre-se com seu e-mail e crie uma senha com pelo menos 8 caracteres."
-    : "Acesse sua conta com e-mail e senha.";
-  if (authSubmitButton) authSubmitButton.textContent = registering ? "Cadastrar" : "Entrar";
-  if (authSwitchButton) authSwitchButton.textContent = registering
-    ? "Já tem uma conta? Faça login"
-    : "Ainda não tem conta? Cadastre-se";
-  if (authPassword) authPassword.autocomplete = registering ? "new-password" : "current-password";
-  if (authForgotContainer) authForgotContainer.hidden = registering;
-  if (authConfirmationField) authConfirmationField.hidden = !registering;
-  if (authPasswordConfirmation) {
-    authPasswordConfirmation.required = registering;
-    authPasswordConfirmation.value = "";
-  }
-  if (authForm) authForm.hidden = false;
-  if (forgotContainer) forgotContainer.hidden = true;
-  if (authSwitchButton) authSwitchButton.hidden = false;
-  if (authStatus) {
-    authStatus.textContent = "";
-    authStatus.dataset.state = "";
-  }
-}
-
-if (authOpenButton) authOpenButton.addEventListener("click", () => promptLogin(""));
-if (authCloseButton) authCloseButton.addEventListener("click", () => {
-  if (authDialog) authDialog.close();
-});
-if (authLogoutButton) {
-  authLogoutButton.addEventListener("click", () => {
-    localStorage.removeItem(authStorageKeys.token);
-    localStorage.removeItem(authStorageKeys.email);
-    authenticatedUser = { accessToken: null, email: null };
-    updateAuthHeader();
-    if (fileInput) fileInput.value = "";
-    if (fileName) fileName.textContent = "Nenhum arquivo selecionado";
-    if (reportCard) reportCard.hidden = true;
-  });
-}
-if (authSwitchButton) {
-  authSwitchButton.addEventListener("click", () => {
-    setAuthMode(authMode === "login" ? "register" : "login");
-  });
-}
-
-if (forgotTrigger) {
-  forgotTrigger.addEventListener("click", (event) => {
-    event.preventDefault();
-    if (forgotEmail && authForm) forgotEmail.value = authForm.elements.email.value;
-    if (authForm) authForm.hidden = true;
-    if (authSwitchButton) authSwitchButton.hidden = true;
-    if (forgotContainer) forgotContainer.hidden = false;
-    if (authStatus) {
-      authStatus.textContent = "";
-      authStatus.dataset.state = "";
-    }
-    if (forgotEmail) forgotEmail.focus();
-  });
-}
-
-if (cancelForgotButton) {
-  cancelForgotButton.addEventListener("click", () => {
-    if (forgotContainer) forgotContainer.hidden = true;
-    if (authForm) authForm.hidden = false;
-    if (authSwitchButton) authSwitchButton.hidden = false;
-    if (authStatus) {
-      authStatus.textContent = "";
-      authStatus.dataset.state = "";
-    }
-  });
-}
-
-if (sendForgotButton) {
-  sendForgotButton.addEventListener("click", async () => {
-    const email = forgotEmail ? forgotEmail.value.trim() : "";
-
-    if (!email) {
-      if (authStatus) {
-        authStatus.textContent = "Preencha o seu e-mail.";
-        authStatus.dataset.state = "error";
-      }
-      return;
-    }
-
-    sendForgotButton.disabled = true;
-    if (authStatus) {
-      authStatus.textContent = "A enviar e-mail de recuperação…";
-      authStatus.dataset.state = "";
-    }
-
-    try {
-      const response = await fetch("/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email }),
-      });
-      
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("O servidor retornou uma resposta inválida.");
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Não foi possível enviar o e-mail de recuperação.");
-      }
-
-      if (authStatus) {
-        authStatus.textContent = "E-mail de recuperação enviado com sucesso! Verifique sua caixa de entrada.";
-        authStatus.dataset.state = "success";
-      }
-      
-      setTimeout(() => {
-        if (forgotContainer) forgotContainer.hidden = true;
-        if (authForm) authForm.hidden = false;
-        if (authSwitchButton) authSwitchButton.hidden = false;
-        if (authStatus) authStatus.textContent = "";
-      }, 4000);
-    } catch (error) {
-      if (authStatus) {
-        authStatus.textContent = error instanceof Error ? error.message : "Não foi possível conectar ao servidor.";
-        authStatus.dataset.state = "error";
-      }
-    } finally {
-      sendForgotButton.disabled = false;
-    }
-  });
-}
-
-for (const toggleButton of passwordToggleButtons) {
-  toggleButton.addEventListener("click", () => {
-    const passwordInput = document.getElementById(toggleButton.dataset.passwordTarget);
-    if (passwordInput) {
-      const isVisible = passwordInput.type === "text";
-      passwordInput.type = isVisible ? "password" : "text";
-      toggleButton.textContent = isVisible ? "Mostrar" : "Ocultar";
-      toggleButton.setAttribute("aria-label", isVisible ? "Mostrar senha" : "Ocultar senha");
-      toggleButton.setAttribute("aria-pressed", String(!isVisible));
-    }
-  });
-}
-
-if (authForm) {
-  authForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (authMode === "register" && authPassword && authPasswordConfirmation && authPassword.value !== authPasswordConfirmation.value) {
-      window.alert("As senhas não coincidem. Confirme a senha antes de continuar.");
-      authPasswordConfirmation.focus();
-      return;
-    }
-
-    if (authSubmitButton) authSubmitButton.disabled = true;
-    if (authStatus) {
-      authStatus.textContent = authMode === "register" ? "Criando sua conta…" : "Entrando…";
-      authStatus.dataset.state = "";
-    }
-
-    try {
-      const response = await fetch(authMode === "register" ? "/api/register" : "/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authForm.elements.email.value,
-          password: authForm.elements.password.value,
-        }),
-      });
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Resposta inválida do servidor.");
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Não foi possível concluir a solicitação.");
-      }
-
-      if (authMode === "register") {
-        authForm.elements.password.value = "";
-        setAuthMode("login");
-        if (authStatus) {
-          authStatus.textContent = "Cadastro realizado. Agora você pode entrar com sua conta.";
-          authStatus.dataset.state = "success";
-        }
-      } else {
-        if (typeof result.accessToken !== "string" || typeof result.user?.email !== "string") {
-          throw new Error("A resposta do servidor não contém os dados de autenticação esperados.");
-        }
-
-        localStorage.setItem(authStorageKeys.token, result.accessToken);
-        localStorage.setItem(authStorageKeys.email, result.user.email);
-        authenticatedUser = {
-          accessToken: result.accessToken,
-          email: result.user.email,
-        };
-        updateAuthHeader();
-        authForm.elements.password.value = "";
-        if (authDialog) authDialog.close();
-        if (pendingUploadFile) {
-          const file = pendingUploadFile;
-          pendingUploadFile = null;
-          setFile(file);
-        }
-      }
-    } catch (error) {
-      if (authStatus) {
-        authStatus.textContent = error instanceof Error ? error.message : "Não foi possível conectar ao servidor.";
-        authStatus.dataset.state = "error";
-      }
-    } finally {
-      if (authSubmitButton) authSubmitButton.disabled = false;
-    }
-  });
-}
-
-let pendingUploadFile = null;
-
-function setFile(file) {
-  if (!file) return;
-  if (!isAuthenticated()) {
-    pendingUploadFile = file;
-    promptLogin("Entre na sua conta para carregar e limpar um ficheiro.");
-    return;
-  }
-
-  const transfer = new DataTransfer();
-  transfer.items.add(file);
-  if (fileInput) fileInput.files = transfer.files;
-  if (fileName) fileName.textContent = file.name;
-  if (status) {
-    status.textContent = "";
-    status.dataset.state = "";
-  }
-  if (reportCard) reportCard.hidden = true;
-  if (optionsPanel) optionsPanel.hidden = false;
-}
-
-// --- Exibição de Relatório e Mala Direta (Individual e Lote) ---
-function showReport(report) {
-  const metricTotal = document.querySelector("#metric-total");
-  const metricCorrected = document.querySelector("#metric-corrected");
-  const metricAlerts = document.querySelector("#metric-alerts");
-  const reportValidations = document.querySelector("#report-validations");
-
-  if (metricTotal) metricTotal.textContent = report.totalRows;
-  if (metricCorrected) metricCorrected.textContent = report.correctedValues;
-  if (metricAlerts) metricAlerts.textContent = report.alertCount;
-  
-  if (reportValidations) {
-    reportValidations.textContent = `Processamento concluído com ${report.alertCount} alertas encontrados.`;
-  }
-
-  if (validationList) {
-    validationList.replaceChildren();
-    
-    if (report.alertasDetalhes && report.alertasDetalhes.length > 0) {
-      // --- Botão de Mala Direta em Lote ---
-      const massaContainer = document.createElement("div");
-      massaContainer.className = "mb-4 p-3 bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-center justify-between";
-      massaContainer.innerHTML = `
-        <div>
-          <span class="font-bold text-sm text-indigo-900 dark:text-indigo-200 block">Automação de Mala Direta</span>
-          <span class="text-xs text-indigo-700 dark:text-indigo-400">Foram encontrados ${report.alertasDetalhes.length} registos com pendências.</span>
-        </div>
-        <button id="btn-disparar-massa" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 transition shadow">
-          Disparar para Todos (E-mail)
-        </button>
-      `;
-      validationList.append(massaContainer);
-
-      setTimeout(() => {
-        const btnMassa = document.getElementById("btn-disparar-massa");
-        if (btnMassa) {
-          btnMassa.addEventListener("click", () => dispararMassaEmLote(report.alertasDetalhes, btnMassa));
-        }
-      }, 100);
-
-      const headerItem = document.createElement("div");
-      headerItem.className = "font-bold text-sm mb-2 text-gray-700 dark:text-gray-300";
-      headerItem.textContent = "Contatos para Correção (Mala Direta):";
-      validationList.append(headerItem);
-
-      report.alertasDetalhes.forEach((item) => {
-        const li = document.createElement("li");
-        li.className = "flex items-center justify-between p-2 mb-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs gap-2";
-        
-        const safeNome = encodeURIComponent(item.nome || '');
-        const safeEmail = encodeURIComponent(item.emailOriginal || '');
-        const safeTel = encodeURIComponent(item.telefone || '');
-        const safeMotivo = encodeURIComponent(item.motivo || '');
-
-        li.innerHTML = `
-          <div style="flex: 1;">
-            <strong class="block text-gray-900 dark:text-white">${item.nome || 'Sem Nome'}</strong>
-            <span class="text-red-500">${item.motivo}</span><br>
-            <span class="text-gray-500">${item.emailOriginal} | ${item.telefone}</span>
-          </div>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <button onclick="enviarEmailIndividual('${safeNome}', '${safeEmail}', '${safeMotivo}', this)" 
-              class="px-2.5 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition" title="Enviar apenas E-mail">
-              ✉️ E-mail
-            </button>
-            <button onclick="abrirWhatsAppIndividual('${safeNome}', '${safeTel}', '${safeMotivo}')" 
-              class="px-2.5 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition" title="Abrir Chat no WhatsApp">
-              💬 WhatsApp
-            </button>
-          </div>
-        `;
-        validationList.append(li);
-      });
-    } else {
-      const item = document.createElement("li");
-      item.className = "is-clean text-green-600 font-medium";
-      item.textContent = "Nenhum dado incorreto encontrado! Todos os registos estão OK.";
-      validationList.append(item);
-    }
-  }
-
-  if (reportCard) {
-    reportCard.hidden = false;
-    reportCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-}
-
-// --- Notificação Individual por E-mail (Com Proteção e Destravamento Garantido) ---
-async function enviarEmailIndividual(encodedNome, encodedEmail, encodedMotivo, botao) {
-  const nome = decodeURIComponent(encodedNome);
-  const emailOriginal = decodeURIComponent(encodedEmail);
-  const motivoRevisao = decodeURIComponent(encodedMotivo);
-
-  if (!emailOriginal || !emailOriginal.includes('@') || emailOriginal.includes('mailinator')) {
-    alert("Atenção: Este contacto possui um e-mail inválido ou descartável (ex: Mailinator). O envio por e-mail foi ignorado.");
-    return;
-  }
-
-  const textoOriginal = botao.textContent;
-  botao.disabled = true;
-  botao.textContent = "A enviar...";
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-  try {
-    const response = await fetch("/api/notificar-erro", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, emailOriginal, telefone: "", motivoRevisao }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Erro de comunicação com o servidor.");
-    }
-
-    const res = await response.json();
-
-    if (!response.ok || !res.sucesso) {
-      throw new Error(res.error || "Não foi possível enviar o e-mail.");
-    }
-
-    botao.textContent = "Enviado! ✓";
-    botao.classList.remove("bg-blue-600", "hover:bg-blue-700");
-    botao.classList.add("bg-gray-500");
-
-  } catch (err) {
-    clearTimeout(timeoutId);
-    // Destrava o botão e restaura o texto original em caso de erro ou rejeição
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-    
-    if (err.name === 'AbortError') {
-      alert("O servidor demorou a responder. Tente novamente em instantes.");
-    } else {
-      alert("Erro no envio: " + err.message);
-    }
-  }
-}
-
-// --- WhatsApp com Janela Única e Mensagem Automática do Erro ---
-function abrirWhatsAppIndividual(encodedNome, encodedTel, encodedMotivo) {
-  const nome = decodeURIComponent(encodedNome);
-  const telefone = decodeURIComponent(encodedTel);
-  const motivoRevisao = decodeURIComponent(encodedMotivo);
-
-  if (!telefone) {
-    alert("Este contacto não possui número de telefone cadastrado.");
-    return;
-  }
-
-  const telLimpo = telefone.replace(/\D/g, '');
-  const textoMensagem = `Olá ${nome || 'tudo bem?'}, identificamos uma divergência em seu cadastro no sistema: *${motivoRevisao}*. Poderia nos ajudar a atualizar?`;
-  
-  const linkWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpo}&text=${encodeURIComponent(textoMensagem)}`;
-  
-  // Abre SEMPRE na mesma aba ('whatsapp_chat_unico'), evitando abrir 50 janelas no computador
-  window.open(linkWhatsApp, 'whatsapp_chat_unico');
-}
-
-// --- Disparo em Lote para Todos (Protegido contra HTML e Timeout) ---
-async function dispararMassaEmLote(alertasDetalhes, botao) {
-  if (!confirm(`Confirma o envio de e-mails de correção para os ${alertasDetalhes.length} contactos listados?`)) {
-    return;
-  }
-
-  botao.disabled = true;
-  botao.textContent = "A enviar lote...";
-
-  try {
-    const loteSeguro = alertasDetalhes.slice(0, 50);
-
-    const response = await fetch("/api/notificar-massa", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alertasDetalhes: loteSeguro })
-    });
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("O servidor demorou a responder ou excedeu o tempo limite. Tente novamente.");
-    }
-
-    const res = await response.json();
-
-    if (!response.ok) {
-      throw new Error(res.error || "Erro no disparo em massa.");
-    }
-
-    alert(res.mensagem + (alertasDetalhes.length > 50 ? " (Lote de segurança de 50 itens processado)." : ""));
-    botao.textContent = "Lote Enviado com Sucesso!";
-    botao.classList.remove("bg-indigo-600", "hover:bg-indigo-700");
-    botao.classList.add("bg-green-600");
-
-  } catch (err) {
-    alert("Erro: " + err.message);
-    botao.disabled = false;
-    botao.textContent = "Tentar Novamente";
-  }
-}
-
-// --- Interação de clique para abrir o explorador de ficheiros ---
-if (dropZone && fileInput) {
-  dropZone.addEventListener("click", () => {
-    fileInput.click();
-  });
-}
-
-if (browseButton && fileInput) {
-  browseButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    fileInput.click();
-  });
-}
-
-if (fileInput) {
-  fileInput.addEventListener("change", () => {
-    if (fileInput.files[0]) setFile(fileInput.files[0]);
-  });
-}
-
-if (dropZone) {
-  for (const eventName of ["dragenter", "dragover"]) {
-    dropZone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dropZone.classList.add("is-dragging");
-    });
-  }
-
-  for (const eventName of ["dragleave", "drop"]) {
-    dropZone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dropZone.classList.remove("is-dragging");
-    });
-  }
-
-  dropZone.addEventListener("drop", (event) => {
-    const [file] = event.dataTransfer.files;
-    setFile(file);
-  });
-}
-
-// --- Processamento do Formulário via FormData ---
-if (form) {
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (!isAuthenticated()) {
-      promptLogin("Entre na sua conta antes de limpar um ficheiro.");
-      return;
-    }
-
-    if (!fileInput || !fileInput.files.length) {
-      if (status) {
-        status.textContent = "Selecione um arquivo CSV ou Excel antes de continuar.";
-        status.dataset.state = "error";
-      }
-      return;
-    }
-
-    if (submitButton) submitButton.disabled = true;
-    if (status) {
-      status.textContent = "Limpando seus dados com segurança…";
-      status.dataset.state = "";
-    }
-
-    try {
-      const formData = new FormData(form);
-
-      const response = await fetch("/api/limpar-dados", { 
-        method: "POST", 
-        body: formData 
-      });
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("O ficheiro enviado excedeu os limites de processamento do servidor.");
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Não foi possível processar o arquivo.");
-      }
-
-      // --- Download do Arquivo Higienizado ---
-      if (result.arquivoBase64) {
-        const binary = atob(result.arquivoBase64);
-        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-        const blob = new Blob([bytes], { type: result.contentType });
-        const downloadUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.download = result.nomeArquivo;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-      }
-
-      if (status) {
-        status.textContent = `Pronto! ${result.totalProcessado} registos limpos e descarregados com sucesso.`;
-        status.dataset.state = "success";
-      }
-      
-      showReport({
-        totalRows: result.totalRecebido,
-        correctedValues: result.totalCorrigidos || 0,
-        alertCount: result.totalAlertas || 0,
-        alertasDetalhes: result.alertasDetalhes || []
-      });
-
-    } catch (error) {
-      if (status) {
-        status.textContent = error.message;
-        status.dataset.state = "error";
-      }
-    } finally {
-      if (submitButton) submitButton.disabled = false;
-    }
-  });
-}
-
-// --- Integração Stripe Checkout ---
 document.addEventListener('DOMContentLoaded', () => {
-  const stripeKey = 'pk_test_51URGY6LKYNLZDtjc720u2yaRbNVnlqI3qPQyQ3oA9s6x2WZ5agAIkFNxTd75Aug7ZbZpYaXa5jVNbPJhz9rQHkGt00rTFBwypC';
-  const stripe = typeof Stripe !== 'undefined' ? Stripe(stripeKey) : null;
+  // Elementos do DOM
+  const authDialog = document.getElementById('auth-dialog');
+  const authOpenBtn = document.getElementById('auth-open');
+  const authCloseBtn = document.getElementById('auth-close');
+  const authForm = document.getElementById('auth-form');
+  const authTitle = document.getElementById('auth-title');
+  const authDescription = document.getElementById('auth-description');
+  const authSubmit = document.getElementById('auth-submit');
+  const authSwitch = document.getElementById('auth-switch');
+  const authStatus = document.getElementById('auth-status');
+  const authUserSpan = document.getElementById('auth-user');
+  const authLogoutBtn = document.getElementById('auth-logout');
+  const companyField = document.getElementById('company-field');
+  const themeToggle = document.getElementById('theme-toggle');
 
+  let isRegistering = false;
+
+  // Gestão de Tema (Dark/Light)
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.dataset.theme;
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = newTheme;
+      localStorage.setItem('dados-em-ordem-theme', newTheme);
+    });
+  }
+
+  // Abrir / Fechar Modal de Autenticação
+  if (authOpenBtn) {
+    authOpenBtn.addEventListener('click', () => {
+      authDialog.showModal();
+    });
+  }
+
+  if (authCloseBtn) {
+    authCloseBtn.addEventListener('click', () => {
+      authDialog.close();
+    });
+  }
+
+  // Alternar entre Login e Cadastro
+  if (authSwitch) {
+    authSwitch.addEventListener('click', () => {
+      isRegistering = !isRegistering;
+      if (isRegistering) {
+        authTitle.textContent = 'Criar sua conta';
+        authDescription.textContent = 'Insira seus dados para começar a usar.';
+        authSubmit.textContent = 'Cadastrar';
+        authSwitch.textContent = 'Já tem conta? Entre aqui';
+        if (companyField) companyField.hidden = false;
+      } else {
+        authTitle.textContent = 'Entrar na sua conta';
+        authDescription.textContent = 'Acesse com seu e-mail e senha.';
+        authSubmit.textContent = 'Entrar';
+        authSwitch.textContent = "Ainda não tem conta? Cadastre-se";
+        if (companyField) companyField.hidden = true;
+      }
+    });
+  }
+
+  // Submissão do Formulário de Autenticação
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(authForm);
+      const email = formData.get('email');
+      const password = formData.get('password');
+      const companyName = formData.get('companyName');
+
+      authStatus.textContent = 'A processar...';
+
+      const endpoint = isRegistering ? '/api/register' : '/api/login';
+      const bodyData = isRegistering ? { email, password, companyName } : { email, password };
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || 'Erro na autenticação');
+
+        authStatus.textContent = isRegistering ? 'Cadastro realizado! Pode entrar.' : 'Login efetuado com sucesso!';
+        
+        if (!isRegistering && result.accessToken) {
+          localStorage.setItem('access_token', result.accessToken);
+          localStorage.setItem('user_email', email);
+          if (result.user && result.user.id) {
+            localStorage.setItem('user_id', result.user.id);
+          }
+          authDialog.close();
+          atualizarEstadoSessao();
+        } else if (isRegistering) {
+          if (result.user && result.user.id) {
+            localStorage.setItem('user_id', result.user.id);
+          }
+          setTimeout(() => {
+            authSwitch.click();
+            authStatus.textContent = 'Registo efetuado! Faça login agora.';
+          }, 1500);
+        }
+      } catch (err) {
+        authStatus.textContent = 'Erro: ' + err.message;
+      }
+    });
+  }
+
+  // Função para verificar se o utilizador está logado na interface
+  function atualizarEstadoSessao() {
+    const token = localStorage.getItem('access_token');
+    const email = localStorage.getItem('user_email');
+
+    if (token && email) {
+      if (authOpenBtn) authOpenBtn.hidden = true;
+      if (authUserSpan) {
+        authUserSpan.textContent = email;
+        authUserSpan.hidden = false;
+      }
+      if (authLogoutBtn) authLogoutBtn.hidden = false;
+    } else {
+      if (authOpenBtn) authOpenBtn.hidden = false;
+      if (authUserSpan) authUserSpan.hidden = true;
+      if (authLogoutBtn) authLogoutBtn.hidden = true;
+    }
+  }
+
+  if (authLogoutBtn) {
+    authLogoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_id');
+      atualizarEstadoSessao();
+      window.location.reload();
+    });
+  }
+
+  atualizarEstadoSessao();
+
+  // --- LÓGICA DE UPLOAD E LIMPEZA DE PLANILHAS ---
+  const uploadForm = document.getElementById('upload-form');
+  const fileInput = document.getElementById('file-input');
+  const fileName = document.getElementById('file-name');
+  const dropZone = document.getElementById('drop-zone');
+  const submitButton = document.getElementById('submit-button');
+  const statusEl = document.getElementById('status');
+  const reportCard = document.getElementById('report-card');
+  const validationList = document.getElementById('validation-list');
+
+  if (fileInput && fileName) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      } else {
+        fileName.textContent = 'Nenhum arquivo selecionado';
+      }
+    });
+  }
+
+  if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#6259e8'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#cbd2e3'; });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#cbd2e3';
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        fileName.textContent = fileInput.files[0].name;
+      }
+    });
+  }
+
+  if (uploadForm) {
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!fileInput.files.length) {
+        statusEl.textContent = 'Por favor, selecione um ficheiro primeiro.';
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = 'A processar e limpar dados...';
+      statusEl.textContent = '';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const response = await fetch('/api/limpar-dados', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Erro ao processar ficheiro');
+
+        statusEl.textContent = 'Limpeza concluída com sucesso!';
+        
+        // Preencher Relatório
+        document.getElementById('metric-total').textContent = data.totalRecebido;
+        document.getElementById('metric-corrected').textContent = data.totalCorrigidos;
+        document.getElementById('metric-alerts').textContent = data.totalAlertas;
+        
+        // Renderizar lista de alertas e botões de notificação
+        if (validationList) {
+          validationList.innerHTML = '';
+          if (data.alertasDetalhes && data.alertasDetalhes.length > 0) {
+            
+            // Botão de notificação em massa no topo da lista
+            const massaContainer = document.createElement('li');
+            massaContainer.style.marginBottom = '12px';
+            massaContainer.innerHTML = `
+              <button id="btn-notify-massa" class="submit-button" type="button" style="margin-top:0; background:#4f46e5;">
+                ✉️ Notificar Todos os Alertas em Massa (${data.alertasDetalhes.length})
+              </button>
+            `;
+            validationList.appendChild(massaContainer);
+
+            document.getElementById('btn-notify-massa').addEventListener('click', async () => {
+              const currentUserId = localStorage.getItem('user_id');
+              const btn = document.getElementById('btn-notify-massa');
+              btn.disabled = true;
+              btn.textContent = 'A enviar notificações em massa...';
+              try {
+                const resMassa = await fetch('/api/notificar-massa', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ alertasDetalhes: data.alertasDetalhes, userId: currentUserId })
+                });
+                const resMassaJson = await resMassa.json();
+                alert(resMassaJson.mensagem || 'Lote enviado!');
+              } catch (errMassa) {
+                alert('Erro no envio em massa: ' + errMassa.message);
+              } finally {
+                btn.disabled = false;
+                btn.textContent = `✉️ Notificar Todos os Alertas em Massa (${data.alertasDetalhes.length})`;
+              }
+            });
+
+            // Linha a linha dos alertas
+            data.alertasDetalhes.forEach(item => {
+              const li = document.createElement('li');
+              li.style.cssText = 'padding:10px; border:1px solid var(--border-soft); border-radius:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; background:var(--surface-muted); font-size:11px;';
+              li.innerHTML = `
+                <div>
+                  <strong>Linha ${item.linha}: ${item.nome}</strong> (${item.emailOriginal || 'Sem email'})<br>
+                  <span style="color:#e11d48;">Motivo: ${item.motivo}</span>
+                </div>
+                <button type="button" class="btn-notify-single" style="padding:4px 10px; border:1px solid #4f46e5; border-radius:6px; background:#f4f3ff; color:#4f46e5; cursor:pointer; font-size:10px; font-weight:700;">
+                  Notificar
+                </button>
+              `;
+
+              const btnSingle = li.querySelector('.btn-notify-single');
+              btnSingle.addEventListener('click', async () => {
+                const currentUserId = localStorage.getItem('user_id');
+                btnSingle.disabled = true;
+                btnSingle.textContent = 'Enviando...';
+                try {
+                  const resSingle = await fetch('/api/notificar-erro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      nome: item.nome,
+                      emailOriginal: item.emailOriginal,
+                      motivoRevisao: item.motivo,
+                      userId: currentUserId
+                    })
+                  });
+                  const resSingleJson = await resSingle.json();
+                  if (!resSingle.ok) throw new Error(resSingleJson.error || 'Erro ao enviar');
+                  btnSingle.textContent = 'Enviado ✓';
+                  btnSingle.style.background = '#e6f9f0';
+                  btnSingle.style.color = '#0d9448';
+                  btnSingle.style.borderColor = '#0d9448';
+                } catch (errSingle) {
+                  alert('Erro: ' + errSingle.message);
+                  btnSingle.disabled = false;
+                  btnSingle.textContent = 'Notificar';
+                }
+              });
+
+              validationList.appendChild(li);
+            });
+          }
+        }
+
+        if (reportCard) reportCard.hidden = false;
+
+        // Criar link de download automático do ficheiro limpo
+        const byteCharacters = atob(data.arquivoBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: data.contentType });
+        
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = data.nomeArquivo;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (err) {
+        statusEl.textContent = 'Erro: ' + err.message;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Limpar e padronizar planilha';
+      }
+    });
+  }
+
+  // Integração com Stripe Checkout para Planos
   const btnPro = document.getElementById('btn-subscribe-pro');
   const btnBusiness = document.getElementById('btn-subscribe-business');
   const btnCredits = document.getElementById('btn-buy-credits');
 
-  async function handleCheckout(planType, buttonElement, defaultText) {
-    if (!stripe) {
-      alert('O Stripe ainda está a carregar. Atualize a página e tente novamente.');
-      return;
-    }
-
-    if (buttonElement) {
-      buttonElement.disabled = true;
-      buttonElement.textContent = 'A redirecionar...';
-    }
-
+  async function handleCheckout(planType) {
     try {
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planType }),
+        body: JSON.stringify({ planType })
       });
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Erro de comunicação com a Stripe.");
+      const session = await response.json();
+      if (session.id) {
+        const stripe = Stripe('pk_test_sua_chave_publicavel');
+        await stripe.redirectToCheckout({ sessionId: session.id });
+      } else {
+        alert('Erro ao iniciar checkout: ' + (session.error || 'Erro desconhecido'));
       }
-
-      const data = await response.json();
-
-      if (data.error) {
-        alert('Erro ao iniciar o pagamento: ' + data.error);
-        if (buttonElement) {
-          buttonElement.disabled = false;
-          buttonElement.textContent = defaultText;
-        }
-        return;
-      }
-
-      if (data.id) {
-        const { error } = await stripe.redirectToCheckout({ sessionId: data.id });
-        if (error) {
-          alert(error.message);
-          if (buttonElement) {
-            buttonElement.disabled = false;
-            buttonElement.textContent = defaultText;
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Erro na requisição de pagamento:', err);
-      alert('Ocorreu um erro de conexão ao processar o pagamento.');
-      if (buttonElement) {
-        buttonElement.disabled = false;
-        buttonElement.textContent = defaultText;
-      }
+    } catch (e) {
+      alert('Erro de conexão com o pagamento.');
     }
   }
 
-  if (btnPro) {
-    btnPro.addEventListener('click', () => handleCheckout('pro', btnPro, 'Assinar Plano Pro'));
-  }
-
-  if (btnBusiness) {
-    btnBusiness.addEventListener('click', () => handleCheckout('business', btnBusiness, 'Assinar Business'));
-  }
-
-  if (btnCredits) {
-    btnCredits.addEventListener('click', () => handleCheckout('credits', btnCredits, 'Comprar Créditos'));
-  }
+  if (btnPro) btnPro.addEventListener('click', () => handleCheckout('pro'));
+  if (btnBusiness) btnBusiness.addEventListener('click', () => handleCheckout('business'));
+  if (btnCredits) btnCredits.addEventListener('click', () => handleCheckout('credits'));
 });
