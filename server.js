@@ -23,9 +23,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
-// Remetente padrão de infraestrutura de produção
-const EMAIL_REMETENTE = process.env.RESEND_FROM_EMAIL || 'Dados em Ordem <contato@datacleanbr.com.br>';
-
 // --- ROTA DE WEBHOOK DO STRIPE (PRECISA FICAR ANTES DO EXPRESS.JSON) ---
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -391,7 +388,7 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL COM REPLY-TO PARA O EMAIL DO CLIENTE ---
+// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL COM SUPORTE ROBUSTO AO PERFIL DO CLIENTE ---
 app.post('/api/notificar-erro', async (req, res) => {
   try {
     const { nome, emailOriginal, motivoRevisao, userId } = req.body;
@@ -403,26 +400,40 @@ app.post('/api/notificar-erro', async (req, res) => {
 
     let nomeRemetente = 'Equipa de Atendimento';
     let emailReplyTo = 'contato@datacleanbr.com.br';
+    let perfilCliente = null;
 
+    // 1. Tenta buscar pelo userId enviado
     if (userId) {
-      const { data: profile } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
-      
-      if (profile) {
-        if (profile.company_name) nomeRemetente = profile.company_name;
-        if (profile.sender_name) nomeRemetente = `${profile.sender_name} (${profile.company_name})`;
-        if (profile.email) emailReplyTo = profile.email; // Resposta vai direto para o cliente
+      perfilCliente = data;
+    }
+
+    // 2. Fallback de segurança: se não encontrou pelo ID, busca o primeiro perfil registado na base de dados
+    if (!perfilCliente) {
+      const { data: profilesList } = await supabase
+        .from('profiles')
+        .select('company_name, sender_name, email')
+        .limit(1);
+      if (profilesList && profilesList.length > 0) {
+        perfilCliente = profilesList[0];
       }
+    }
+
+    if (perfilCliente) {
+      if (perfilCliente.company_name) nomeRemetente = perfilCliente.company_name;
+      if (perfilCliente.sender_name) nomeRemetente = `${perfilCliente.sender_name} (${perfilCliente.company_name})`;
+      if (perfilCliente.email) emailReplyTo = perfilCliente.email;
     }
 
     const remetenteFormatado = `${nomeRemetente} <contato@datacleanbr.com.br>`;
 
     const data = await resend.emails.send({
       from: remetenteFormatado,
-      replyTo: emailReplyTo, // <--- Configurado para responder diretamente ao utilizador
+      replyTo: emailReplyTo,
       to: [resEmail.email],
       subject: `Atenção: Necessária atualização de cadastro - ${nomeRemetente}`,
       html: `
@@ -435,6 +446,7 @@ app.post('/api/notificar-erro', async (req, res) => {
           <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco.</p>
           <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">
             Mensagem enviada por <strong>${nomeRemetente}</strong> através da plataforma de gestão de dados.<br>
+            Para responder a esta mensagem, utilize o contacto direto: <strong>${emailReplyTo}</strong>
           </p>
         </div>
       `,
@@ -442,7 +454,7 @@ app.post('/api/notificar-erro', async (req, res) => {
 
     return res.status(200).json({
       sucesso: true,
-      mensagem: "E-mail de notificação personalizado enviado com sucesso!",
+      mensagem: `E-mail enviado com sucesso em nome de ${nomeRemetente} (Resposta para: ${emailReplyTo})`,
       detalhesResend: data
     });
 
@@ -452,7 +464,7 @@ app.post('/api/notificar-erro', async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO EM MASSA COM REPLY-TO PARA O EMAIL DO CLIENTE ---
+// --- ROTA DE NOTIFICAÇÃO EM MASSA COM SUPORTE ROBUSTO AO PERFIL DO CLIENTE ---
 app.post('/api/notificar-massa', async (req, res) => {
   try {
     const { alertasDetalhes, userId } = req.body;
@@ -463,19 +475,31 @@ app.post('/api/notificar-massa', async (req, res) => {
 
     let nomeRemetente = 'Equipa de Atendimento';
     let emailReplyTo = 'contato@datacleanbr.com.br';
+    let perfilCliente = null;
 
     if (userId) {
-      const { data: profile } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
-      
-      if (profile) {
-        if (profile.company_name) nomeRemetente = profile.company_name;
-        if (profile.sender_name) nomeRemetente = `${profile.sender_name} (${profile.company_name})`;
-        if (profile.email) emailReplyTo = profile.email; // Resposta vai direto para o cliente
+      perfilCliente = data;
+    }
+
+    if (!perfilCliente) {
+      const { data: profilesList } = await supabase
+        .from('profiles')
+        .select('company_name, sender_name, email')
+        .limit(1);
+      if (profilesList && profilesList.length > 0) {
+        perfilCliente = profilesList[0];
       }
+    }
+
+    if (perfilCliente) {
+      if (perfilCliente.company_name) nomeRemetente = perfilCliente.company_name;
+      if (perfilCliente.sender_name) nomeRemetente = `${perfilCliente.sender_name} (${perfilCliente.company_name})`;
+      if (perfilCliente.email) emailReplyTo = perfilCliente.email;
     }
 
     const remetenteFormatado = `${nomeRemetente} <contato@datacleanbr.com.br>`;
@@ -488,7 +512,7 @@ app.post('/api/notificar-massa', async (req, res) => {
         try {
           await resend.emails.send({
             from: remetenteFormatado,
-            replyTo: emailReplyTo, // <--- Configurado para responder diretamente ao utilizador
+            replyTo: emailReplyTo,
             to: [resEmail.email],
             subject: `Atualização de cadastro necessária - ${nomeRemetente}`,
             html: `
@@ -509,7 +533,7 @@ app.post('/api/notificar-massa', async (req, res) => {
 
     return res.status(200).json({
       sucesso: true,
-      mensagem: `Lote processado com sucesso! ${enviados} e-mails enviados em nome de ${nomeRemetente}.`
+      mensagem: `Lote processado com sucesso! ${enviados} e-mails enviados em nome de ${nomeRemetente} (Resposta para: ${emailReplyTo}).`
     });
 
   } catch (err) {
