@@ -391,7 +391,7 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL PERSONALIZADA COM A MARCA DO CLIENTE ---
+// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL COM REPLY-TO PARA O EMAIL DO CLIENTE ---
 app.post('/api/notificar-erro', async (req, res) => {
   try {
     const { nome, emailOriginal, motivoRevisao, userId } = req.body;
@@ -401,26 +401,28 @@ app.post('/api/notificar-erro', async (req, res) => {
       return res.status(400).json({ error: 'E-mail inválido ou descartável para envio.' });
     }
 
-    // Buscar a empresa/marca personalizada do utilizador logado no Supabase
     let nomeRemetente = 'Equipa de Atendimento';
+    let emailReplyTo = 'contato@datacleanbr.com.br';
+
     if (userId) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('company_name, sender_name')
+        .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
       
       if (profile) {
         if (profile.company_name) nomeRemetente = profile.company_name;
         if (profile.sender_name) nomeRemetente = `${profile.sender_name} (${profile.company_name})`;
+        if (profile.email) emailReplyTo = profile.email; // Resposta vai direto para o cliente
       }
     }
 
-    // Remetente técnico fixo no protocolo, mas com o nome comercial do cliente em evidência
     const remetenteFormatado = `${nomeRemetente} <contato@datacleanbr.com.br>`;
 
     const data = await resend.emails.send({
       from: remetenteFormatado,
+      replyTo: emailReplyTo, // <--- Configurado para responder diretamente ao utilizador
       to: [resEmail.email],
       subject: `Atenção: Necessária atualização de cadastro - ${nomeRemetente}`,
       html: `
@@ -450,7 +452,7 @@ app.post('/api/notificar-erro', async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO EM MASSA PERSONALIZADA ---
+// --- ROTA DE NOTIFICAÇÃO EM MASSA COM REPLY-TO PARA O EMAIL DO CLIENTE ---
 app.post('/api/notificar-massa', async (req, res) => {
   try {
     const { alertasDetalhes, userId } = req.body;
@@ -460,16 +462,19 @@ app.post('/api/notificar-massa', async (req, res) => {
     }
 
     let nomeRemetente = 'Equipa de Atendimento';
+    let emailReplyTo = 'contato@datacleanbr.com.br';
+
     if (userId) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('company_name, sender_name')
+        .select('company_name, sender_name, email')
         .eq('id', userId)
         .single();
       
       if (profile) {
         if (profile.company_name) nomeRemetente = profile.company_name;
         if (profile.sender_name) nomeRemetente = `${profile.sender_name} (${profile.company_name})`;
+        if (profile.email) emailReplyTo = profile.email; // Resposta vai direto para o cliente
       }
     }
 
@@ -483,6 +488,7 @@ app.post('/api/notificar-massa', async (req, res) => {
         try {
           await resend.emails.send({
             from: remetenteFormatado,
+            replyTo: emailReplyTo, // <--- Configurado para responder diretamente ao utilizador
             to: [resEmail.email],
             subject: `Atualização de cadastro necessária - ${nomeRemetente}`,
             html: `
