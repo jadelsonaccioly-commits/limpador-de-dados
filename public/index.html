@@ -19,128 +19,6 @@
       }
     </script>
     <style>
-/* Estilo limpo e padronizado do Modal de Autenticação */
-dialog {
-  padding: 25px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--surface-solid);
-  color: var(--text-primary);
-  max-width: 400px;
-  width: 90%;
-  box-shadow: var(--shadow-card);
-}
-
-dialog::backdrop {
-  background: rgba(13, 18, 32, .6);
-  backdrop-filter: blur(4px);
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 15px;
-}
-
-.auth-form[hidden], 
-.auth-forgot-section[hidden],
-#forgot-step-1[hidden],
-#forgot-step-2[hidden] {
-  display: none !important;
-}
-
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--text-secondary);
-}
-
-.auth-field input {
-  width: 100%;
-  min-height: 43px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  outline-color: #7869ee;
-  color: var(--text-primary);
-  background: var(--surface-muted);
-  font-size: 13px;
-}
-
-.auth-submit, 
-#btn-send-forgot, 
-#btn-update-password {
-  display: flex;
-  width: 100%;
-  min-height: 45px;
-  align-items: center;
-  justify-content: center;
-  margin-top: 5px;
-  border: 0;
-  border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(110deg, #6259e8, #7869ee);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-  transition: filter .18s ease;
-}
-
-.auth-submit:hover, 
-#btn-send-forgot:hover, 
-#btn-update-password:hover {
-  filter: brightness(1.05);
-}
-
-.auth-forgot-container {
-  text-align: right;
-  margin-top: -4px;
-}
-
-.auth-forgot-link {
-  background: none;
-  border: none;
-  color: #6259d9;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.auth-forgot-link:hover {
-  text-decoration: underline;
-}
-
-.auth-switch {
-  width: 100%;
-  margin-top: 15px;
-  padding: 5px;
-  border: 0;
-  color: #6259d9;
-  background: transparent;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.auth-forgot-cancel, 
-#btn-cancel-forgot, 
-#btn-cancel-step2 {
-  width: 100%;
-  min-height: 38px;
-  margin-top: 6px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-secondary);
-  background: transparent;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
       :root {
         color-scheme: light;
         --page-bg: #f5f7fc;
@@ -191,17 +69,19 @@ dialog::backdrop {
       button, input { font: inherit; }
 
       .page {
-        width: min(100% - 40px, 1080px);
+        width: min(100% - 24px, 1080px);
         margin: 0 auto;
       }
 
+      /* Topbar Responsiva */
       .topbar {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 20px;
-        margin-top: 20px;
-        padding: 12px 17px;
+        gap: 12px;
+        margin-top: 15px;
+        padding: 12px 16px;
         border: 1px solid var(--border);
         border-radius: 17px;
         background: var(--surface);
@@ -212,9 +92,9 @@ dialog::backdrop {
       .brand {
         display: inline-flex;
         align-items: center;
-        gap: 11px;
+        gap: 10px;
         color: var(--text-primary);
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 750;
         letter-spacing: -.04em;
         text-decoration: none;
@@ -222,73 +102,63 @@ dialog::backdrop {
 
       .brand-mark {
         display: grid;
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         place-items: center;
-        border-radius: 14px;
+        border-radius: 12px;
         color: white;
         background: linear-gradient(145deg, #6159ed, #806af8);
         box-shadow: 0 7px 16px rgba(101, 88, 235, .25);
       }
 
-      .brand-mark svg { width: 25px; height: 25px; }
+      .brand-mark svg { width: 22px; height: 22px; }
 
       .privacy {
-        display: inline-flex;
+        display: none; /* Oculto em mobile para poupar espaço, visível em desktop */
         align-items: center;
         gap: 8px;
-        margin-left: auto;
         color: var(--text-secondary);
         font-size: 12px;
         font-weight: 650;
       }
-
+      @media(min-width: 768px) {
+        .privacy { display: inline-flex; }
+      }
       .privacy svg { color: #2c9b72; }
 
-      .theme-toggle {
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .theme-toggle, .auth-open-button, .auth-logout-button {
         display: inline-flex;
-        min-height: 38px;
+        min-height: 36px;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 0 12px;
+        gap: 6px;
+        padding: 0 10px;
         border: 1px solid var(--border);
-        border-radius: 11px;
+        border-radius: 10px;
         color: var(--text-secondary);
         background: var(--surface-muted);
         cursor: pointer;
         font-size: 11px;
         font-weight: 700;
-        transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+        transition: all .18s ease;
       }
-
-      .theme-toggle:hover {
-        transform: translateY(-1px);
-        color: #6c61e9;
-        border-color: #aaa4f6;
-      }
-
-      .theme-toggle svg { flex: 0 0 auto; }
-      .icon-moon { display: none; }
-      :root[data-theme="dark"] .icon-sun { display: none; }
-      :root[data-theme="dark"] .icon-moon { display: block; }
 
       .auth-open-button {
-        min-height: 38px;
-        padding: 0 12px;
-        border: 1px solid #d8d4ff;
-        border-radius: 11px;
+        border-color: #d8d4ff;
         color: #5d55cf;
         background: #f7f6ff;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 700;
       }
-
       .auth-open-button:hover { background: #efedff; }
 
       .auth-user {
-        max-width: 180px;
+        max-width: 140px;
         overflow: hidden;
         color: var(--text-secondary);
         font-size: 11px;
@@ -297,24 +167,16 @@ dialog::backdrop {
         white-space: nowrap;
       }
 
-      .auth-logout-button {
-        min-height: 38px;
-        padding: 0 10px;
-        border: 1px solid var(--border);
-        border-radius: 11px;
-        color: var(--text-secondary);
-        background: var(--surface-muted);
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 650;
-      }
+      .icon-moon { display: none; }
+      :root[data-theme="dark"] .icon-sun { display: none; }
+      :root[data-theme="dark"] .icon-moon { display: block; }
 
       main {
         display: flex;
         flex-direction: column;
         align-items: stretch;
-        gap: 27px;
-        padding: 36px 0 64px;
+        gap: 24px;
+        padding: 24px 0 48px;
       }
 
       .hero { max-width: 760px; }
@@ -323,183 +185,90 @@ dialog::backdrop {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        margin: 0 0 18px;
+        margin: 0 0 14px;
         color: #6259db;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 750;
         letter-spacing: .11em;
         text-transform: uppercase;
       }
 
       .eyebrow::before {
-        width: 7px;
-        height: 7px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         background: #7669f6;
         content: "";
       }
 
       h1 {
-        max-width: 600px;
         margin: 0;
-        font-size: clamp(42px, 6.1vw, 70px);
+        font-size: clamp(32px, 5.5vw, 64px);
         font-weight: 760;
         letter-spacing: -.075em;
-        line-height: 1.04;
+        line-height: 1.08;
       }
 
       h1 span { color: #6c61e9; }
 
       .intro {
-        max-width: 470px;
-        margin: 23px 0 0;
+        margin: 18px 0 0;
         color: var(--text-secondary);
-        font-size: 16px;
-        line-height: 1.75;
+        font-size: 15px;
+        line-height: 1.65;
       }
 
       .features {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin: 27px 0 0;
+        gap: 8px;
+        margin: 20px 0 0;
         padding: 0;
         list-style: none;
       }
 
       .features li {
-        padding: 8px 11px;
+        padding: 6px 10px;
         border: 1px solid var(--border);
         border-radius: 999px;
         color: #58637a;
         background: rgba(255, 255, 255, .72);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
       }
 
-      .upload-card {
-        width: min(100%, 680px);
-        align-self: center;
-        padding: 26px;
-        border: 1px solid var(--border);
-        border-radius: 23px;
-        background: var(--surface);
-        box-shadow: var(--shadow-card);
-      }
-
-      .card-heading {
-        margin: 0;
-        font-size: 17px;
-        font-weight: 730;
-        letter-spacing: -.035em;
-      }
-
-      .card-description {
-        margin: 7px 0 19px;
-        color: #8992a5;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .drop-zone {
-        display: flex;
-        min-height: 205px;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        border: 1.5px dashed #cbd2e3;
-        border-radius: 16px;
-        background: #fafbff;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color .18s ease, background .18s ease, transform .18s ease;
-      }
-
-      .drop-zone.is-dragging {
-        transform: scale(1.01);
-        border-color: #7266ee;
-        background: #f3f2ff;
-      }
-
-      .upload-icon {
-        display: grid;
-        width: 46px;
-        height: 46px;
-        margin-bottom: 13px;
-        place-items: center;
-        border: 1px solid #e8e7ff;
-        border-radius: 14px;
-        color: #6c61e9;
-        background: #f0efff;
-      }
-
-      .drop-title {
-        margin: 0;
-        color: #303b54;
-        font-size: 13px;
-        font-weight: 700;
-      }
-
-      .drop-help {
-        margin: 6px 0 15px;
-        color: #929bad;
-        font-size: 11px;
-      }
-
-      .browse-button {
-        display: inline-flex;
-        min-height: 37px;
-        align-items: center;
-        justify-content: center;
-        padding: 0 15px;
-        border: 1px solid #e2e4f6;
-        border-radius: 9px;
-        color: #5d55cf;
-        background: white;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .file-input {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-      }
-
-      .file-name {
-        margin: 12px 0 0;
-        color: #5c6680;
-        font-size: 11px;
-      }
-
+      /* Módulos de Limpeza Responsivos */
       .options-panel {
         display: block;
         width: 100%;
-        margin: 24px 0 0;
+        margin: 0;
         padding: 0;
         border: 0;
       }
 
       .options-panel legend {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
         color: var(--text-secondary);
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
       }
 
       .module-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 14px;
+        grid-template-columns: 1fr; /* 1 coluna por defeito (Telemóvel) */
+        gap: 12px;
+      }
+
+      @media(min-width: 640px) {
+        .module-grid { grid-template-columns: repeat(2, 1fr); } /* 2 colunas em tablets */
+      }
+
+      @media(min-width: 1024px) {
+        .module-grid { grid-template-columns: repeat(4, 1fr); } /* 4 colunas em desktop */
       }
 
       .option-group {
-        padding: 0 13px 13px;
+        padding: 0 12px 12px;
         border: 1px solid var(--border-soft);
         border-radius: 16px;
         background: var(--surface);
@@ -508,8 +277,8 @@ dialog::backdrop {
       .option-group summary {
         display: flex;
         align-items: center;
-        gap: 9px;
-        padding: 14px 0;
+        gap: 8px;
+        padding: 12px 0;
         color: var(--text-primary);
         cursor: pointer;
         font-size: 11px;
@@ -519,26 +288,26 @@ dialog::backdrop {
 
       .category-icon {
         display: grid;
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         place-items: center;
-        border-radius: 9px;
+        border-radius: 8px;
         color: #6259db;
         background: #f0efff;
       }
 
       .option-list {
         display: grid;
-        gap: 7px;
+        gap: 6px;
       }
 
       .option-item {
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        padding: 9px;
+        padding: 8px;
         border: 1px solid var(--border-soft);
-        border-radius: 10px;
+        border-radius: 9px;
         color: var(--text-secondary);
         background: var(--surface-muted);
         cursor: pointer;
@@ -546,42 +315,162 @@ dialog::backdrop {
         font-weight: 600;
       }
 
+      /* Cartão de Upload */
+      .upload-card {
+        width: 100%;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--surface);
+        box-shadow: var(--shadow-card);
+      }
+
+      .card-heading {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 730;
+      }
+
+      .card-description {
+        margin: 6px 0 16px;
+        color: #8992a5;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .drop-zone {
+        display: flex;
+        min-height: 180px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        border: 1.5px dashed #cbd2e3;
+        border-radius: 14px;
+        background: #fafbff;
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .upload-icon {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        margin-bottom: 10px;
+        place-items: center;
+        border-radius: 12px;
+        color: #6c61e9;
+        background: #f0efff;
+      }
+
+      .drop-title { margin: 0; color: #303b54; font-size: 12px; font-weight: 700; }
+      .drop-help { margin: 4px 0 12px; color: #929bad; font-size: 10px; }
+
+      .browse-button {
+        display: inline-flex;
+        min-height: 34px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        border: 1px solid #e2e4f6;
+        border-radius: 8px;
+        color: #5d55cf;
+        background: white;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .file-input {
+        position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0);
+      }
+
+      .file-name { margin: 10px 0 0; color: #5c6680; font-size: 10px; word-break: break-all; }
+
       .submit-button {
         display: flex;
         width: 100%;
-        min-height: 48px;
+        min-height: 46px;
         align-items: center;
         justify-content: center;
-        margin-top: 20px;
+        margin-top: 16px;
         border: 0;
         border-radius: 11px;
         color: #fff;
         background: linear-gradient(110deg, #6259e8, #7869ee);
         cursor: pointer;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
       }
 
-      .status {
-        margin-top: 12px;
-        font-size: 11px;
+      .status { margin-top: 10px; font-size: 11px; }
+
+      /* Relatório e Métricas */
+      .report-card {
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--surface);
+        box-shadow: var(--shadow-card);
       }
 
-      /* Estilos do Modal de Autenticação */
+      .metrics {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 16px 0;
+      }
+      @media(min-width: 640px) {
+        .metrics { grid-template-columns: repeat(3, 1fr); }
+      }
+      .metric {
+        padding: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        background: var(--surface-muted);
+      }
+      .metric-label { margin: 0; font-size: 10px; color: var(--text-secondary); }
+      .metric-value { margin: 4px 0 0; font-size: 18px; font-weight: 750; color: #6259db; }
+
+      /* Secção de Preços Responsiva */
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 24px;
+      }
+      @media(min-width: 768px) {
+        .pricing-grid { grid-template-columns: repeat(3, 1fr); }
+      }
+
+      .pricing-card {
+        background: var(--surface);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      /* Modal */
       dialog {
-        padding: 0;
+        padding: 20px;
         border: 1px solid var(--border);
         border-radius: 18px;
         background: var(--surface-solid);
         color: var(--text-primary);
-        max-width: 400px;
+        max-width: 380px;
         width: 90%;
         box-shadow: var(--shadow-card);
       }
-      dialog::backdrop {
-        background: rgba(13, 18, 32, .6);
-        backdrop-filter: blur(4px);
-      }
+      dialog::backdrop { background: rgba(13, 18, 32, .6); backdrop-filter: blur(4px); }
+      
+      .auth-form { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+      .auth-field { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 650; color: var(--text-secondary); }
+      .auth-field input { width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-muted); color: var(--text-primary); }
     </style>
   </head>
   <body>
@@ -598,25 +487,22 @@ dialog::backdrop {
           Dados em ordem
         </a>
         <div class="privacy">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M12 3 5 6v5c0 4.6 2.9 8.5 7 10 4.1-1.5 7-5.4 7-10V6l-7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
             <path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Processamento seguro
         </div>
-        <button class="auth-open-button" id="auth-open" type="button">Entrar / Cadastrar</button>
-        <span class="auth-user" id="auth-user" hidden></span>
-        <button class="auth-logout-button" id="auth-logout" type="button" hidden>Sair</button>
-        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar modo escuro" title="Ativar modo escuro">
-          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.7" stroke="currentColor" stroke-width="1.7"/>
-            <path d="M12 2.5v2M12 19.5v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2.5 12h2m15 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-          </svg>
-          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span id="theme-label">Modo escuro</span>
-        </button>
+        <div class="topbar-actions">
+          <button class="auth-open-button" id="auth-open" type="button">Entrar</button>
+          <span class="auth-user" id="auth-user" hidden></span>
+          <button class="auth-logout-button" id="auth-logout" type="button" hidden>Sair</button>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Alternar tema">
+            <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.7" stroke="currentColor" stroke-width="1.7"/><path d="M12 2.5v2M12 19.5v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2.5 12h2m15 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20.2 15.4A8.5 8.5 0 0 1 8.6 3.8 8.7 8.7 0 1 0 20.2 15.4Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="theme-label">Tema</span>
+          </button>
+        </div>
       </header>
 
       <main>
@@ -625,7 +511,7 @@ dialog::backdrop {
             <p class="eyebrow">Seu CSV, pronto para usar</p>
             <h1 id="page-title">Menos bagunça.<br><span>Mais dados em ordem.</span></h1>
             <p class="intro">
-              Envie sua planilha e padronize nomes, e-mails, telefones e CPFs em poucos segundos.
+              Envie sua planilha e padronize nomes, e-mails, telefones e CPFs em poucos segundos diretamente do telemóvel ou computador.
             </p>
             <ul class="features" aria-label="Campos padronizados">
               <li>Nomes corrigidos</li>
@@ -635,54 +521,36 @@ dialog::backdrop {
             </ul>
           </section>
 
-          <fieldset class="options-panel" id="options-panel">
-            <legend>Módulos de limpeza <span>— todas as opções estão ativadas</span></legend>
+          <fieldset class="options-panel" id="options-panel" style="margin-top: 24px;">
+            <legend>Módulos de limpeza <span>— todas as opções ativadas</span></legend>
             <div class="module-grid">
               <details class="option-group" open>
-                <summary>
-                  <span class="category-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-7.5a4 4 0 0 1 0 7.5m2 4h.5a3.5 3.5 0 0 1 3.5 3.5V20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-                  Contatos &amp; CRM
-                </summary>
+                <summary><span class="category-icon">✉️</span> Contatos &amp; CRM</summary>
                 <div class="option-list">
                   <label class="option-item"><input type="checkbox" name="options" value="separateNameSurname" checked>Separar Nome/Sobrenome</label>
                   <label class="option-item"><input type="checkbox" name="options" value="correctEmailDomains" checked>Corrigir E-mail</label>
                   <label class="option-item"><input type="checkbox" name="options" value="addWhatsappNinthDigit" checked>Ajustar WhatsApp</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="formatPhones" checked>Formatar Telefones</label>
                   <label class="option-item"><input type="checkbox" name="options" value="validateEmails" checked>Validar E-mails</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="standardizeNames" checked>Padronizar Nomes</label>
                 </div>
               </details>
               <details class="option-group" open>
-                <summary>
-                  <span class="category-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 4v4h4M8 13h8m-8 3h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-                  Documentos &amp; B2B
-                </summary>
+                <summary><span class="category-icon">📄</span> Documentos &amp; B2B</summary>
                 <div class="option-list">
-                  <label class="option-item"><input type="checkbox" name="options" value="formatCpfs" checked>Formatar CPF</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="formatCnpjs" checked>Formatar CNPJ</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="cleanRgIe" checked>Limpar RG/IE</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="simplifyCompanyName" checked>Razão Social</label>
+                  <label class="option-item"><input type="checkbox" name="options" value="formatCpfs" checked>Formatar CPF/CNPJ</label>
+                  <label class="option-item"><input type="checkbox" name="options" value="simplifyCompanyName" checked>Nome Fantasia</label>
                 </div>
               </details>
               <details class="option-group" open>
-                <summary>
-                  <span class="category-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.7"/></svg></span>
-                  Endereços &amp; Logística
-                </summary>
+                <summary><span class="category-icon">📍</span> Endereços &amp; Logística</summary>
                 <div class="option-list">
                   <label class="option-item"><input type="checkbox" name="options" value="formatZips" checked>Formatar CEP</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="standardizeAddresses" checked>Padronizar Logradouros</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="convertStateToUf" checked>Converter Estado para UF</label>
+                  <label class="option-item"><input type="checkbox" name="options" value="convertStateToUf" checked>Converter UF</label>
                 </div>
               </details>
               <details class="option-group" open>
-                <summary>
-                  <span class="category-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4m9-4v4M4 9h16m-11 4h2m3 0h2m-7 3h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-                  Financeiro &amp; Datas
-                </summary>
+                <summary><span class="category-icon">📊</span> Financeiro &amp; Datas</summary>
                 <div class="option-list">
-                  <label class="option-item"><input type="checkbox" name="options" value="convertCurrency" checked>Moeda numérico</label>
-                  <label class="option-item"><input type="checkbox" name="options" value="standardizeDates" checked>Datas (DD/MM/AAAA)</label>
+                  <label class="option-item"><input type="checkbox" name="options" value="standardizeDates" checked>Validar Datas</label>
                   <label class="option-item"><input type="checkbox" name="options" value="removeDuplicates" checked>Remover Duplicados</label>
                 </div>
               </details>
@@ -690,18 +558,13 @@ dialog::backdrop {
           </fieldset>
           <input type="hidden" name="optionsSubmitted" value="1">
 
-          <section class="upload-card" aria-labelledby="upload-title">
+          <section class="upload-card" style="margin-top: 24px;" aria-labelledby="upload-title">
             <h2 class="card-heading" id="upload-title">Limpe seus dados</h2>
-            <p class="card-description">Envie um arquivo CSV ou uma planilha Excel. Seus dados e cabeçalhos serão mantidos no formato original.</p>
+            <p class="card-description">Envie um arquivo CSV ou planilha Excel. Tudo adaptado para qualquer ecrã.</p>
             <div class="drop-zone" id="drop-zone">
-              <span class="upload-icon" aria-hidden="true">
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="upload-icon" aria-hidden="true">📂</span>
               <p class="drop-title">Arraste e solte seu arquivo aqui</p>
-              <p class="drop-help">ou procure no computador</p>
+              <p class="drop-help">ou selecione no dispositivo</p>
               <button class="browse-button" type="button">Selecionar arquivo</button>
               <input class="file-input" id="file-input" type="file" name="file" accept=".csv, .xlsx, .xls">
               <p class="file-name" id="file-name">Nenhum arquivo selecionado</p>
@@ -711,146 +574,83 @@ dialog::backdrop {
           </section>
         </form>
 
-        <!-- Cartão de Relatório de Limpeza -->
+        <!-- Cartão de Relatório -->
         <section class="report-card" id="report-card" hidden>
-          <div class="report-heading">
-            <div>
-              <h2 class="report-title">Relatório da limpeza</h2>
-              <p class="report-description">Resumo das correções efetuadas no seu ficheiro.</p>
-            </div>
-            <span class="report-validations" id="report-validations"></span>
-          </div>
+          <h2 class="card-heading">Relatório da limpeza</h2>
+          <p class="card-description">Resumo das correções efetuadas.</p>
           <div class="metrics">
-            <div class="metric">
-              <p class="metric-label">Linhas processadas</p>
-              <p class="metric-value" id="metric-total">0</p>
-            </div>
-            <div class="metric">
-              <p class="metric-label">Valores corrigidos</p>
-              <p class="metric-value" id="metric-corrected">0</p>
-            </div>
-            <div class="metric">
-              <p class="metric-label">Inconsistências</p>
-              <p class="metric-value" id="metric-alerts">0</p>
-            </div>
+            <div class="metric"><p class="metric-label">Linhas processadas</p><p class="metric-value" id="metric-total">0</p></div>
+            <div class="metric"><p class="metric-label">Valores corrigidos</p><p class="metric-value" id="metric-corrected">0</p></div>
+            <div class="metric"><p class="metric-label">Inconsistências</p><p class="metric-value" id="metric-alerts">0</p></div>
           </div>
-          <ul class="validation-list" id="validation-list"></ul>
+          <ul class="validation-list" id="validation-list" style="list-style: none; padding: 0; margin-top: 12px;"></ul>
         </section>
 
-        <!-- Secção de Planos e Preços -->
-        <section id="pricing" class="pricing-section" style="padding: 60px 20px; text-align: center;">
-          <div style="max-width: 760px; margin: 0 auto 40px;">
-            <p class="eyebrow" style="justify-content: center;">Investimento inteligente</p>
-            <h2 style="font-size: 32px; font-weight: 760; letter-spacing: -.04em; margin: 10px 0;">Escolha o plano ideal para o seu volume</h2>
-            <p style="color: var(--text-secondary); font-size: 15px;">Evolua sua produtividade com ferramentas avançadas de limpeza e IA.</p>
-          </div>
+        <!-- Secção de Planos -->
+        <section id="pricing" style="padding: 20px 0; text-align: center;">
+          <h2 style="font-size: 24px; font-weight: 760; margin: 0 0 8px;">Planos e Preços</h2>
+          <p style="color: var(--text-secondary); font-size: 13px; margin: 0 0 20px;">Evolua sua produtividade.</p>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 980px; margin: 0 auto; text-align: left;">
-            
-            <!-- Plano Pro -->
-            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="pricing-grid">
+            <div class="pricing-card">
               <div>
-                <span style="background: #f0efff; color: #6259db; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Mais Popular</span>
-                <h3 style="margin: 15px 0 5px; font-size: 20px;">Plano Pro</h3>
-                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Para profissionais e gestores.</p>
-                <p style="font-size: 36px; font-weight: 800; color: #6259db; margin: 0 0 20px;">R$ 49,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">/mês</span></p>
-                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
+                <span style="background: #f0efff; color: #6259db; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;">PRO</span>
+                <h3 style="margin: 12px 0 4px; font-size: 18px;">Plano Pro</h3>
+                <p style="font-size: 28px; font-weight: 800; color: #6259db; margin: 0 0 16px;">R$ 49,90<span style="font-size: 11px; color: var(--text-secondary);">/mês</span></p>
+                <ul style="margin: 0 0 20px; list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); display: grid; gap: 8px; text-align: left;">
                   <li>✓ Até 15.000 linhas/mês</li>
-                  <li>✓ Padronização com IA</li>
-                  <li>✓ Remoção de duplicados</li>
-                  <li>✓ Suporte prioritário</li>
+                  <li>✓ Padronização completa</li>
                 </ul>
               </div>
-              <button id="btn-subscribe-pro" class="submit-button" type="button" style="margin-top: 0;">Assinar Plano Pro</button>
+              <button id="btn-subscribe-pro" class="submit-button" type="button" style="margin-top: 0;">Assinar Pro</button>
             </div>
 
-            <!-- Plano Business -->
-            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="pricing-card">
               <div>
-                <span style="background: #e6f9f0; color: #0d9448; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Empresas & Agências</span>
-                <h3 style="margin: 15px 0 5px; font-size: 20px;">Plano Business</h3>
-                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Para alto volume e equipes.</p>
-                <p style="font-size: 36px; font-weight: 800; color: #0d9448; margin: 0 0 20px;">R$ 149,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;">/mês</span></p>
-                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
+                <span style="background: #e6f9f0; color: #0d9448; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;">BUSINESS</span>
+                <h3 style="margin: 12px 0 4px; font-size: 18px;">Plano Business</h3>
+                <p style="font-size: 28px; font-weight: 800; color: #0d9448; margin: 0 0 16px;">R$ 149,90<span style="font-size: 11px; color: var(--text-secondary);">/mês</span></p>
+                <ul style="margin: 0 0 20px; list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); display: grid; gap: 8px; text-align: left;">
                   <li>✓ Até 75.000 linhas/mês</li>
-                  <li>✓ Processamento em lote</li>
-                  <li>✓ Relatórios detalhados</li>
-                  <li>✓ Suporte dedicado via WhatsApp</li>
+                  <li>✓ Suporte prioritário</li>
                 </ul>
               </div>
               <button id="btn-subscribe-business" class="submit-button" type="button" style="margin-top: 0; background: linear-gradient(110deg, #0d9448, #10b981);">Assinar Business</button>
             </div>
 
-            <!-- Pacote de Créditos Avulsos -->
-            <div style="background: var(--surface); padding: 30px; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="pricing-card">
               <div>
-                <span style="background: var(--surface-muted); color: var(--text-secondary); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Sem Mensalidade</span>
-                <h3 style="margin: 15px 0 5px; font-size: 20px;">Pacote Avulso</h3>
-                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 20px;">Ideal para demandas pontuais.</p>
-                <p style="font-size: 36px; font-weight: 800; color: var(--text-primary); margin: 0 0 20px;">R$ 29,90<span style="font-size: 13px; color: var(--text-secondary); font-weight: normal;"> (único)</span></p>
-                <ul style="margin: 0 0 25px; list-style: none; padding: 0; font-size: 13px; color: var(--text-secondary); display: grid; gap: 10px;">
-                  <li>✓ 5.000 créditos de limpeza</li>
-                  <li>✓ Sem validade mensal</li>
-                  <li>✓ Acesso total aos validadores</li>
-                  <li>✓ Pagamento único</li>
+                <span style="background: var(--surface-muted); color: var(--text-secondary); padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;">AVULSO</span>
+                <h3 style="margin: 12px 0 4px; font-size: 18px;">Pacote Avulso</h3>
+                <p style="font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 0 0 16px;">R$ 29,90<span style="font-size: 11px; color: var(--text-secondary);"> (único)</span></p>
+                <ul style="margin: 0 0 20px; list-style: none; padding: 0; font-size: 12px; color: var(--text-secondary); display: grid; gap: 8px; text-align: left;">
+                  <li>✓ 5.000 créditos</li>
+                  <li>✓ Sem mensalidade</li>
                 </ul>
               </div>
               <button id="btn-buy-credits" class="submit-button" type="button" style="margin-top: 0; background: linear-gradient(110deg, #334155, #475569);">Comprar Créditos</button>
             </div>
-
           </div>
         </section>
       </main>
     </div>
 
-    <!-- Modal de Autenticação / Login -->
+    <!-- Modal de Autenticação -->
     <dialog id="auth-dialog">
       <div class="auth-content">
-        <div class="auth-heading">
-          <h2 class="auth-title" id="auth-title">Entrar na sua conta</h2>
-          <button class="auth-close" id="auth-close" type="button">✕</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 class="card-heading" id="auth-title">Entrar na sua conta</h2>
+          <button id="auth-close" type="button" style="background:none; border:none; font-size:16px; cursor:pointer; color:var(--text-primary);">✕</button>
         </div>
-        <p class="auth-description" id="auth-description">Acesse sua conta com e-mail e senha.</p>
+        <p class="card-description" id="auth-description">Acesse com seu e-mail e senha.</p>
         
         <form class="auth-form" id="auth-form">
-          <label class="auth-field">
-            E-mail
-            <input type="email" name="email" required autocomplete="email">
-          </label>
-          <label class="auth-field">
-            Senha
-            <span class="auth-password-control">
-              <input type="password" id="auth-password" name="password" required>
-              <button type="button" class="auth-password-toggle" data-password-target="auth-password">Mostrar</button>
-            </span>
-          </label>
-          <label class="auth-field" id="auth-confirmation-field" hidden>
-            Confirmar Senha
-            <input type="password" id="auth-password-confirmation">
-          </label>
-          <div class="auth-forgot-container" id="auth-forgot-container">
-            <button type="button" class="auth-forgot-link" id="btn-forgot-trigger" style="background:none; border:none; cursor:pointer; padding:0;">Esqueceu a senha?</button>
-          </div>
-          <button type="submit" class="auth-submit" id="auth-submit">Entrar</button>
+          <label class="auth-field">E-mail<input type="email" name="email" required autocomplete="email"></label>
+          <label class="auth-field">Senha<input type="password" id="auth-password" name="password" required></label>
+          <button type="submit" class="submit-button" id="auth-submit">Entrar</button>
         </form>
-
-       <!-- Recuperação de Senha -->
-        <div class="auth-forgot-section" id="forgot-container" hidden>
-          <div id="forgot-step-1">
-            <p class="auth-forgot-description">Digite o seu e-mail para receber as instruções de recuperação.</p>
-            <label class="auth-field" style="margin-top:8px;">
-              E-mail
-              <input type="email" id="forgot-email" required>
-            </label>
-            <div class="auth-forgot-actions" style="margin-top:10px;">
-              <button type="button" class="auth-submit" id="btn-send-forgot">Enviar Instruções</button>
-              <button type="button" class="auth-forgot-cancel" id="btn-cancel-forgot">Cancelar</button>
-            </div>
-          </div>
-        </div>
-
-        <p class="auth-status" id="auth-status" data-state=""></p>
-        <button type="button" class="auth-switch" id="auth-switch">Ainda não tem conta? Cadastre-se</button>
+        <p class="status" id="auth-status"></p>
+        <button type="button" id="auth-switch" style="background:none; border:none; color:#6259d9; font-size:11px; font-weight:650; cursor:pointer; margin-top:12px; width:100%; text-align:center;">Ainda não tem conta? Cadastre-se</button>
       </div>
     </dialog>
 
