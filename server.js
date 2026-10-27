@@ -168,4 +168,8 @@ function validarCNPJ(cnpjStr) {
   pos = tamanho - 7;
   for (let i = tamanho; i >= 1; i--) {
     soma += numeros.charAt(tamanho - i) * pos--;
-    if (pos < 2) pos =
+    if (pos < 2) pos = 9;
+  }
+  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+  return resultado === parseInt(digitos.charAt(1));
+}
