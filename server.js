@@ -388,10 +388,12 @@ app.post('/api/limpar-dados', upload.single('file'), async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL (WHITE-LABEL REAL - BUSCA POR EMAIL OU ID) ---
+// --- ROTA DE NOTIFICAÇÃO INDIVIDUAL COM DIAGNÓSTICO ---
 app.post('/api/notificar-erro', async (req, res) => {
   try {
     const { nome, emailOriginal, motivoRevisao, userId, userEmail } = req.body;
+    
+    console.log("🔍 DIAGNÓSTICO RECEBIDO NO SERVIDOR:", { userId, userEmail });
 
     const resEmail = sanitizarEmail(emailOriginal);
     if (!resEmail.valido) {
@@ -402,46 +404,36 @@ app.post('/api/notificar-erro', async (req, res) => {
     let emailReplyTo = 'contato@datacleanbr.com.br';
     let perfilCliente = null;
 
-    // 1. Procura primariamente pelo e-mail do utilizador logado no Supabase
     if (userEmail) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('company_name, sender_name, email')
+        .select('company_name, email')
         .eq('email', userEmail)
         .single();
+      console.log("📊 Resultado busca por email:", data, error);
       if (data) perfilCliente = data;
     }
 
-    // 2. Se não encontrou por e-mail, tenta pelo userId
     if (!perfilCliente && userId) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('company_name, sender_name, email')
+        .select('company_name, email')
         .eq('id', userId)
         .single();
+      console.log("📊 Resultado busca por userId:", data, error);
       if (data) perfilCliente = data;
-    }
-
-    // 3. Fallback de segurança caso nenhum venha preenchido
-    if (!perfilCliente) {
-      const { data: profilesList } = await supabase
-        .from('profiles')
-        .select('company_name, sender_name, email')
-        .limit(1);
-      if (profilesList && profilesList.length > 0) {
-        perfilCliente = profilesList[0];
-      }
     }
 
     if (perfilCliente) {
       if (perfilCliente.company_name) nomeRemetente = perfilCliente.company_name;
-      if (perfilCliente.sender_name) nomeRemetente = `${perfilCliente.sender_name} (${perfilCliente.company_name})`;
       if (perfilCliente.email) emailReplyTo = perfilCliente.email;
     }
 
+    console.log("✅ VALORES FINAIS A USAR NO ENVIO:", { nomeRemetente, emailReplyTo });
+
     const remetenteFormatado = `${nomeRemetente} <contato@datacleanbr.com.br>`;
 
-    const data = await resend.emails.send({
+    const dataResend = await resend.emails.send({
       from: remetenteFormatado,
       replyTo: emailReplyTo,
       to: [resEmail.email],
@@ -453,7 +445,7 @@ app.post('/api/notificar-erro', async (req, res) => {
           <blockquote style="background: #f3f4f6; padding: 12px; border-left: 4px solid #4f46e5; margin: 15px 0;">
             <strong>Motivo da revisão:</strong> ${motivoRevisao}
           </blockquote>
-          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações connosco respondendo diretamente para <strong>${emailReplyTo}</strong>.</p>
+          <p>Para mantermos a sua base limpa e atualizada, por favor, atualize as suas informações respondendo diretamente para <strong>${emailReplyTo}</strong>.</p>
           <p style="margin-top: 30px; font-size: 11px; color: #6b7280;">
             Mensagem gerida e enviada com segurança por <strong>${nomeRemetente}</strong>.
           </p>
@@ -463,8 +455,8 @@ app.post('/api/notificar-erro', async (req, res) => {
 
     return res.status(200).json({
       sucesso: true,
-      mensagem: `E-mail enviado com sucesso em nome de ${nomeRemetente} (Respostas direcionadas para: ${emailReplyTo})`,
-      detalhesResend: data
+      mensagem: `E-mail enviado em nome de ${nomeRemetente} (Resposta para: ${emailReplyTo})`,
+      detalhesResend: dataResend
     });
 
   } catch (err) {
@@ -473,7 +465,7 @@ app.post('/api/notificar-erro', async (req, res) => {
   }
 });
 
-// --- ROTA DE NOTIFICAÇÃO EM MASSA (WHITE-LABEL REAL - BUSCA POR EMAIL OU ID) ---
+// --- ROTA DE NOTIFICAÇÃO EM MASSA COM DIAGNÓSTICO ---
 app.post('/api/notificar-massa', async (req, res) => {
   try {
     const { alertasDetalhes, userId, userEmail } = req.body;
@@ -489,7 +481,7 @@ app.post('/api/notificar-massa', async (req, res) => {
     if (userEmail) {
       const { data } = await supabase
         .from('profiles')
-        .select('company_name, sender_name, email')
+        .select('company_name, email')
         .eq('email', userEmail)
         .single();
       if (data) perfilCliente = data;
@@ -498,25 +490,14 @@ app.post('/api/notificar-massa', async (req, res) => {
     if (!perfilCliente && userId) {
       const { data } = await supabase
         .from('profiles')
-        .select('company_name, sender_name, email')
+        .select('company_name, email')
         .eq('id', userId)
         .single();
       if (data) perfilCliente = data;
     }
 
-    if (!perfilCliente) {
-      const { data: profilesList } = await supabase
-        .from('profiles')
-        .select('company_name, sender_name, email')
-        .limit(1);
-      if (profilesList && profilesList.length > 0) {
-        perfilCliente = profilesList[0];
-      }
-    }
-
     if (perfilCliente) {
       if (perfilCliente.company_name) nomeRemetente = perfilCliente.company_name;
-      if (perfilCliente.sender_name) nomeRemetente = `${perfilCliente.sender_name} (${perfilCliente.company_name})`;
       if (perfilCliente.email) emailReplyTo = perfilCliente.email;
     }
 
